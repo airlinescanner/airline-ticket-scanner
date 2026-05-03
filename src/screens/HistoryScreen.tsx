@@ -93,7 +93,7 @@ export const HistoryScreen: React.FC = () => {
             <EmptyState
               title={t('ticket.history_tab')}
               message={t('ticket.emptyHistory')}
-              icon="ticket-outline" // Используем иконку, если есть, или оставляем пустым
+              icon="ticket-outline"
             />
           ) : null
         }

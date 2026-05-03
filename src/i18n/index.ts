@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Импорт файлов переводов
 import uk from './uk.json';
 import ru from './ru.json';
+import en from './en.json';
 
 // Ключ для сохранения выбранного языка в AsyncStorage
 const LANGUAGE_KEY = '@airline_scanner:language';
@@ -52,6 +53,7 @@ const initI18n = async () => {
       resources: {
         uk: { translation: uk },
         ru: { translation: ru },
+        en: { translation: en },
       },
       lng: savedLanguage, // Язык по умолчанию из AsyncStorage
       fallbackLng: 'uk', // Украинский как fallback (Требование 9.1)

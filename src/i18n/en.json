@@ -1,0 +1,138 @@
+{
+  "demo": {
+    "title": "Design System",
+    "currentTheme": "Current Theme",
+    "mode": "Mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "colorTokens": "COLOR TOKENS",
+    "buttonComponents": "BUTTON COMPONENTS",
+    "emptyState": "EMPTY STATE",
+    "spacingTokens": "SPACING TOKENS",
+    "primaryButton": "Primary Button",
+    "secondaryButton": "Secondary Button",
+    "disabledButton": "Disabled Button",
+    "emptyHistoryMessage": "Ticket history is empty. Scan your first ticket!",
+    "switchTheme": "Switch to {{theme}} theme",
+    "footer": {
+      "tokensUsed": "✅ All components use tokens",
+      "animationDuration": "✅ Switch animation: 300ms",
+      "themeSaved": "✅ Theme saved in AsyncStorage"
+    }
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "retry": "Retry"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "uk": "Ukrainian",
+    "ru": "Russian",
+    "en": "English"
+  },
+  "scanner": {
+    "title": "Scanner",
+    "tab": "Scanner",
+    "capture": "Capture",
+    "permissionDenied": "Camera access denied",
+    "permissionInstructions": "Please grant camera access in device settings",
+    "lowQuality": "Image is blurry or low quality. Try again",
+    "ocrFailed": "Failed to recognize text. Try again"
+  },
+  "ticket": {
+    "passengerName": "Passenger Name",
+    "airlineCode": "Airline Code",
+    "flightNumber": "Flight Number",
+    "departureDate": "Departure Date",
+    "departureAirport": "Departure Airport",
+    "arrivalAirport": "Arrival Airport",
+    "seat": "Seat",
+    "serviceClass": "Service Class",
+    "notRecognized": "Not recognized",
+    "scanAgain": "Scan Again",
+    "confirm": "Confirm",
+    "export": "Export JSON",
+    "history": "Ticket History",
+    "history_tab": "History",
+    "emptyHistory": "Ticket history is empty. Scan your first ticket!",
+    "scannedAt": "Scanned at"
+  },
+  "airline": {
+    "title": "Airlines",
+    "list_title": "Airlines",
+    "tab": "Airlines",
+    "search": "Search airlines",
+    "notFound": "Airline not found in registry",
+    "addManually": "Add manually",
+    "iataCode": "IATA Code",
+    "icaoCode": "ICAO Code",
+    "name": "Name",
+    "country": "Country",
+    "logoUrl": "Logo URL",
+    "registrationUrl": "Registration URL",
+    "supportPhone": "Support Phone",
+    "checkInHoursBefore": "Check-in hours before",
+    "notes": "Notes",
+    "updatedAt": "Updated",
+    "emptySearch": "No airlines found",
+    "deleteConfirm": "Delete airline {{name}}?",
+    "deleteWarning": "This will affect {{count}} tickets",
+    "validation": {
+      "iataLength": "IATA code must be exactly 2 characters",
+      "icaoLength": "ICAO code must be exactly 3 characters",
+      "required": "Required field",
+      "invalidUrl": "Invalid URL format (must start with https://)",
+      "invalidHours": "Value must be between 1 and 720 hours",
+      "duplicateCode": "Airline with this code already exists"
+    }
+  },
+  "registration": {
+    "title": "Registration Date",
+    "opensAt": "Registration opens",
+    "airlineInfo": "Airline Information",
+    "goToWebsite": "Go to Registration Website",
+    "alreadyOpened": "Registration is already open",
+    "timeLeftDays": "in {{days}} d. {{hours}} h.",
+    "timeLeftHours": "in {{hours}} h. {{minutes}} m.",
+    "timeLeftMinutes": "in {{minutes}} m."
+  },
+  "notification": {
+    "title": "Check-in for flight {{flightNumber}}",
+    "body": "Registration for flight {{airline}} opens at {{date}}",
+    "permissionDenied": "Notification access denied",
+    "permissionInstructions": "Please grant notification access in device settings",
+    "enabled": "Notifications enabled",
+    "disabled": "Notifications disabled"
+  },
+  "settings": {
+    "title": "Settings",
+    "tab": "Settings",
+    "theme": "Theme",
+    "language": "Interface Language",
+    "backup": "Backup",
+    "lastBackup": "Last Backup",
+    "neverBackedUp": "Never backed up",
+    "createBackup": "Create Backup",
+    "restoreBackup": "Restore from Backup",
+    "restoreWarning": "All current data will be replaced by the backup data. Continue?",
+    "backupSuccess": "Backup created successfully",
+    "restoreSuccess": "Data restored successfully",
+    "invalidBackup": "Invalid backup file",
+    "unsupportedVersion": "Unsupported schema version"
+  }
+}

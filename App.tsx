@@ -13,7 +13,8 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
-import './src/i18n'; // Инициализация i18next
+import i18n from './src/i18n'; // Инициализация i18next
+import { I18nextProvider } from 'react-i18next';
 import { initializeDatabase } from './src/services/database';
 import { AlertProvider } from './src/theme/AlertContext';
 
@@ -57,18 +58,20 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <AlertProvider>
-        {!isDbReady ? (
-          <LoadingScreen />
-        ) : (
-          <>
-            <StatusBar style="auto" />
-            <AppNavigator />
-          </>
-        )}
-      </AlertProvider>
-    </ThemeProvider>
+    <I18nextProvider i18n={i18n}>
+      <ThemeProvider>
+        <AlertProvider>
+          {!isDbReady ? (
+            <LoadingScreen />
+          ) : (
+            <>
+              <StatusBar style="auto" />
+              <AppNavigator />
+            </>
+          )}
+        </AlertProvider>
+      </ThemeProvider>
+    </I18nextProvider>
   );
 }
 
