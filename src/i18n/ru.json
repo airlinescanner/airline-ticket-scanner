@@ -1,0 +1,137 @@
+{
+  "demo": {
+    "title": "Дизайн-система",
+    "currentTheme": "Текущая тема",
+    "mode": "Режим",
+    "light": "Светлая",
+    "dark": "Тёмная",
+    "system": "Системная",
+    "colorTokens": "ЦВЕТОВЫЕ ТОКЕНЫ",
+    "buttonComponents": "КОМПОНЕНТЫ КНОПОК",
+    "emptyState": "EMPTY STATE",
+    "spacingTokens": "ТОКЕНЫ ОТСТУПОВ",
+    "primaryButton": "Primary Button",
+    "secondaryButton": "Secondary Button",
+    "disabledButton": "Disabled Button",
+    "emptyHistoryMessage": "История билетов пуста. Отсканируйте первый билет!",
+    "switchTheme": "Переключить на {{theme}} тему",
+    "footer": {
+      "tokensUsed": "✅ Все компоненты используют токены",
+      "animationDuration": "✅ Анимация переключения: 300ms",
+      "themeSaved": "✅ Тема сохраняется в AsyncStorage"
+    }
+  },
+  "common": {
+    "ok": "ОК",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "back": "Назад",
+    "next": "Далее",
+    "done": "Готово",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "success": "Успешно",
+    "retry": "Попробовать снова"
+  },
+  "theme": {
+    "light": "Светлая",
+    "dark": "Тёмная",
+    "system": "Системная"
+  },
+  "language": {
+    "uk": "Українська",
+    "ru": "Русский"
+  },
+  "scanner": {
+    "title": "Сканер",
+    "tab": "Сканер",
+    "capture": "Сделать снимок",
+    "permissionDenied": "Доступ к камере запрещён",
+    "permissionInstructions": "Пожалуйста, предоставьте доступ к камере в настройках устройства",
+    "lowQuality": "Изображение размытое или низкого качества. Попробуйте ещё раз",
+    "ocrFailed": "Не удалось распознать текст. Попробуйте ещё раз"
+  },
+  "ticket": {
+    "passengerName": "Имя пассажира",
+    "airlineCode": "Код авиакомпании",
+    "flightNumber": "Номер рейса",
+    "departureDate": "Дата вылета",
+    "departureAirport": "Аэропорт отправления",
+    "arrivalAirport": "Аэропорт прибытия",
+    "seat": "Место",
+    "serviceClass": "Класс обслуживания",
+    "notRecognized": "Не распознано",
+    "scanAgain": "Сканировать заново",
+    "confirm": "Подтвердить",
+    "export": "Экспортировать JSON",
+    "history": "История билетов",
+    "history_tab": "История",
+    "emptyHistory": "История билетов пуста. Отсканируйте первый билет!",
+    "scannedAt": "Отсканировано"
+  },
+  "airline": {
+    "title": "Авиакомпании",
+    "list_title": "Авиакомпании",
+    "tab": "Авиакомпании",
+    "search": "Поиск авиакомпаний",
+    "notFound": "Авиакомпания не найдена в реестре",
+    "addManually": "Добавить вручную",
+    "iataCode": "Код IATA",
+    "icaoCode": "Код ICAO",
+    "name": "Название",
+    "country": "Страна",
+    "logoUrl": "URL логотипа",
+    "registrationUrl": "URL регистрации",
+    "supportPhone": "Телефон поддержки",
+    "checkInHoursBefore": "Регистрация за (часов)",
+    "notes": "Примечания",
+    "updatedAt": "Обновлено",
+    "emptySearch": "Авиакомпании не найдены",
+    "deleteConfirm": "Удалить авиакомпанию {{name}}?",
+    "deleteWarning": "Это затронет {{count}} билетов",
+    "validation": {
+      "iataLength": "Код IATA должен содержать ровно 2 символа",
+      "icaoLength": "Код ICAO должен содержать ровно 3 символа",
+      "required": "Обязательное поле",
+      "invalidUrl": "Неверный формат URL (должен начинаться с https://)",
+      "invalidHours": "Значение должно быть от 1 до 720 часов",
+      "duplicateCode": "Авиакомпания с таким кодом уже существует"
+    }
+  },
+  "registration": {
+    "title": "Дата регистрации",
+    "opensAt": "Регистрация открывается",
+    "airlineInfo": "Информация об авиакомпании",
+    "goToWebsite": "Перейти на сайт регистрации",
+    "alreadyOpened": "Регистрация уже открыта",
+    "timeLeftDays": "через {{days}} дн. {{hours}} час.",
+    "timeLeftHours": "через {{hours}} час. {{minutes}} мин.",
+    "timeLeftMinutes": "через {{minutes}} мин."
+  },
+  "notification": {
+    "title": "Регистрация на рейс {{flightNumber}}",
+    "body": "Регистрация на рейс {{airline}} открывается {{date}}",
+    "permissionDenied": "Доступ к уведомлениям запрещён",
+    "permissionInstructions": "Пожалуйста, предоставьте доступ к уведомлениям в настройках устройства",
+    "enabled": "Уведомления включены",
+    "disabled": "Уведомления отключены"
+  },
+  "settings": {
+    "title": "Настройки",
+    "tab": "Настройки",
+    "theme": "Тема оформления",
+    "language": "Язык интерфейса",
+    "backup": "Резервное копирование",
+    "lastBackup": "Последняя резервная копия",
+    "neverBackedUp": "Резервная копия не создавалась",
+    "createBackup": "Создать резервную копию",
+    "restoreBackup": "Восстановить из резервной копии",
+    "restoreWarning": "Все текущие данные будут заменены данными из резервной копии. Продолжить?",
+    "backupSuccess": "Резервная копия успешно создана",
+    "restoreSuccess": "Данные успешно восстановлены",
+    "invalidBackup": "Неверный файл резервной копии",
+    "unsupportedVersion": "Неподдерживаемая версия схемы"
+  }
+}

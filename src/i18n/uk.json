@@ -1,0 +1,137 @@
+{
+  "demo": {
+    "title": "Дизайн-система",
+    "currentTheme": "Поточна тема",
+    "mode": "Режим",
+    "light": "Світла",
+    "dark": "Темна",
+    "system": "Системна",
+    "colorTokens": "КОЛЬОРОВІ ТОКЕНИ",
+    "buttonComponents": "КОМПОНЕНТИ КНОПОК",
+    "emptyState": "EMPTY STATE",
+    "spacingTokens": "ТОКЕНИ ВІДСТУПІВ",
+    "primaryButton": "Primary Button",
+    "secondaryButton": "Secondary Button",
+    "disabledButton": "Disabled Button",
+    "emptyHistoryMessage": "Історія квитків порожня. Відскануйте перший квиток!",
+    "switchTheme": "Переключити на {{theme}} тему",
+    "footer": {
+      "tokensUsed": "✅ Всі компоненти використовують токени",
+      "animationDuration": "✅ Анімація переключення: 300ms",
+      "themeSaved": "✅ Тема зберігається в AsyncStorage"
+    }
+  },
+  "common": {
+    "ok": "ОК",
+    "cancel": "Скасувати",
+    "save": "Зберегти",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "back": "Назад",
+    "next": "Далі",
+    "done": "Готово",
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "success": "Успішно",
+    "retry": "Спробувати знову"
+  },
+  "theme": {
+    "light": "Світла",
+    "dark": "Темна",
+    "system": "Системна"
+  },
+  "language": {
+    "uk": "Українська",
+    "ru": "Русский"
+  },
+  "scanner": {
+    "title": "Сканер",
+    "tab": "Сканер",
+    "capture": "Зробити знімок",
+    "permissionDenied": "Доступ до камери заборонено",
+    "permissionInstructions": "Будь ласка, надайте доступ до камери в налаштуваннях пристрою",
+    "lowQuality": "Зображення розмите або низької якості. Спробуйте ще раз",
+    "ocrFailed": "Не вдалося розпізнати текст. Спробуйте ще раз"
+  },
+  "ticket": {
+    "passengerName": "Ім'я пасажира",
+    "airlineCode": "Код авіакомпанії",
+    "flightNumber": "Номер рейсу",
+    "departureDate": "Дата вильоту",
+    "departureAirport": "Аеропорт відправлення",
+    "arrivalAirport": "Аеропорт прибуття",
+    "seat": "Місце",
+    "serviceClass": "Клас обслуговування",
+    "notRecognized": "Не розпізнано",
+    "scanAgain": "Сканувати знову",
+    "confirm": "Підтвердити",
+    "export": "Експортувати JSON",
+    "history": "Історія квитків",
+    "history_tab": "Історія",
+    "emptyHistory": "Історія квитків порожня. Відскануйте перший квиток!",
+    "scannedAt": "Відскановано"
+  },
+  "airline": {
+    "title": "Авіакомпанії",
+    "list_title": "Авіакомпанії",
+    "tab": "Авіакомпанії",
+    "search": "Пошук авіакомпаній",
+    "notFound": "Авіакомпанія не знайдена в реєстрі",
+    "addManually": "Додати вручну",
+    "iataCode": "Код IATA",
+    "icaoCode": "Код ICAO",
+    "name": "Назва",
+    "country": "Країна",
+    "logoUrl": "URL логотипу",
+    "registrationUrl": "URL реєстрації",
+    "supportPhone": "Телефон підтримки",
+    "checkInHoursBefore": "Реєстрація за (годин)",
+    "notes": "Примітки",
+    "updatedAt": "Оновлено",
+    "emptySearch": "Авіакомпанії не знайдені",
+    "deleteConfirm": "Видалити авіакомпанію {{name}}?",
+    "deleteWarning": "Це вплине на {{count}} квитків",
+    "validation": {
+      "iataLength": "Код IATA повинен містити рівно 2 символи",
+      "icaoLength": "Код ICAO повинен містити рівно 3 символи",
+      "required": "Обов'язкове поле",
+      "invalidUrl": "Невірний формат URL (повинен починатися з https://)",
+      "invalidHours": "Значення повинно бути від 1 до 720 годин",
+      "duplicateCode": "Авіакомпанія з таким кодом вже існує"
+    }
+  },
+  "registration": {
+    "title": "Дата реєстрації",
+    "opensAt": "Реєстрація відкривається",
+    "airlineInfo": "Інформація про авіакомпанію",
+    "goToWebsite": "Перейти на сайт реєстрації",
+    "alreadyOpened": "Реєстрація вже відкрита",
+    "timeLeftDays": "через {{days}} дн. {{hours}} год.",
+    "timeLeftHours": "через {{hours}} год. {{minutes}} хв.",
+    "timeLeftMinutes": "через {{minutes}} хв."
+  },
+  "notification": {
+    "title": "Реєстрація на рейс {{flightNumber}}",
+    "body": "Реєстрація на рейс {{airline}} відкривається {{date}}",
+    "permissionDenied": "Доступ до сповіщень заборонено",
+    "permissionInstructions": "Будь ласка, надайте доступ до сповіщень в налаштуваннях пристрою",
+    "enabled": "Сповіщення увімкнено",
+    "disabled": "Сповіщення вимкнено"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "tab": "Налаштування",
+    "theme": "Тема оформлення",
+    "language": "Мова інтерфейсу",
+    "backup": "Резервне копіювання",
+    "lastBackup": "Остання резервна копія",
+    "neverBackedUp": "Резервна копія не створювалася",
+    "createBackup": "Створити резервну копію",
+    "restoreBackup": "Відновити з резервної копії",
+    "restoreWarning": "Всі поточні дані будуть замінені даними з резервної копії. Продовжити?",
+    "backupSuccess": "Резервна копія успішно створена",
+    "restoreSuccess": "Дані успішно відновлені",
+    "invalidBackup": "Невірний файл резервної копії",
+    "unsupportedVersion": "Непідтримувана версія схеми"
+  }
+}
