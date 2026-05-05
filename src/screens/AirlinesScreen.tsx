@@ -63,10 +63,18 @@ export const AirlinesScreen: React.FC = () => {
           </Text>
         </View>
         <View style={styles.footer}>
-          <Ionicons name="location-outline" size={14} color={tokens.colors.text.secondary} />
-          <Text style={[styles.country, { color: tokens.colors.text.secondary, marginLeft: 4 }]}>
-            {item.country}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <Ionicons name="location-outline" size={14} color={tokens.colors.text.secondary} />
+            <Text style={[styles.country, { color: tokens.colors.text.secondary, marginLeft: 4 }]}>
+              {item.country}
+            </Text>
+          </View>
+          <View style={[styles.checkInBadge, { backgroundColor: tokens.colors.status.success + '15' }]}>
+            <Ionicons name="time-outline" size={12} color={tokens.colors.status.success} />
+            <Text style={[styles.checkInText, { color: tokens.colors.status.success }]}>
+              {item.checkInHoursBefore}h
+            </Text>
+          </View>
         </View>
       </Card>
     </TouchableOpacity>
@@ -163,6 +171,19 @@ const styles = StyleSheet.create({
   },
   country: {
     fontSize: 14,
+  },
+  checkInBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  checkInText: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 4,
   },
   fab: {
     position: 'absolute',

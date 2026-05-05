@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Linking } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Input } from '../components/Input';
 import { PillButton } from '../components/PillButton';
+import { Card } from '../components/Card';
 import { airlineRepository } from '../services/database/AirlineRepository';
 import { Airline } from '../types/airline';
 
@@ -15,6 +17,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'AirlineDetail'>;
 
 export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { tokens, theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { showAlert } = useAlert();
   const { airlineId, mode: initialMode = 'view' } = route.params;
@@ -104,13 +107,12 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const handleDelete = () => {
     showAlert({
-      title: 'Delete Airline',
-      message: 'Are you sure you want to delete this airline?',
+      title: t('airline.deleteConfirm').split('?')[0],
+      message: t('airline.deleteConfirm').replace('{{name}}', formData.name),
       type: 'delete',
       buttons: [
-        { text: 'Cancel', style: 'cancel' },
         { 
-          text: 'Delete', 
+          text: t('common.delete'), 
           style: 'destructive',
           onPress: async () => {
             try {
@@ -120,13 +122,14 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               }
             } catch (error) {
               showAlert({
-                title: 'Error',
-                message: 'Failed to delete airline',
+                title: t('common.error'),
+                message: t('airline.error.deleteFailed'),
                 type: 'error'
               });
             }
           }
-        }
+        },
+        { text: t('common.cancel'), style: 'cancel' }
       ]
     });
   };
@@ -139,32 +142,83 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     );
   }
 
-  const renderInfoItem = (label: string, value: string | number | null, icon: string) => (
-    <View style={styles.infoItem}>
-      <View style={[styles.iconBox, { backgroundColor: tokens.colors.accent.primary + '10' }]}>
-        <Ionicons name={icon as any} size={20} color={tokens.colors.accent.primary} />
-      </View>
-      <View style={styles.infoContent}>
-        <Text style={[styles.infoLabel, { color: tokens.colors.text.secondary }]}>{label}</Text>
-        <Text style={[styles.infoValue, { color: tokens.colors.text.primary }]}>{value || '—'}</Text>
-      </View>
-    </View>
-  );
+  const openUrl = async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        showAlert({
+          title: t('common.error'),
+          message: 'Unsupported URL',
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error('Error opening URL:', error);
+    }
+  };
+
+  const renderInfoItem = (label: string, value: string | number | null, icon: string, isHighlight?: boolean) => {
+    const isUrl = typeof value === 'string' && value.startsWith('http');
+    
+    return (
+      <TouchableOpacity 
+        style={styles.infoItem} 
+        disabled={!isUrl}
+        onPress={() => isUrl && openUrl(value)}
+      >
+        <View style={[styles.iconBox, { backgroundColor: tokens.colors.accent.primary + '10' }]}>
+          <Ionicons name={icon as any} size={20} color={tokens.colors.accent.primary} />
+        </View>
+        <View style={styles.infoContent}>
+          <Text style={[styles.infoLabel, { color: tokens.colors.text.secondary }]}>{label}</Text>
+          <Text 
+            style={[
+              styles.infoValue, 
+              { color: isUrl ? tokens.colors.accent.primary : tokens.colors.text.primary },
+              isUrl && { textDecorationLine: 'underline' },
+              isHighlight && { 
+                color: tokens.colors.status.success, 
+                fontSize: 16, 
+                fontWeight: '800' 
+              }
+            ]}
+          >
+            {value || '—'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 25 }]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
-            {isNew ? 'Добавить авиакомпанию' : isEditing ? 'Редактировать' : formData.name}
-          </Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity 
+              onPress={() => {
+                if (isEditing && !isNew) {
+                  setIsEditing(false);
+                } else {
+                  navigation.goBack();
+                }
+              }} 
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color={tokens.colors.text.primary} />
+            </TouchableOpacity>
+            <Text style={[styles.title, { color: tokens.colors.text.primary }]} numberOfLines={2}>
+              {isNew ? t('airline.addManually') : isEditing ? t('common.edit') : formData.name}
+            </Text>
+          </View>
           {!isEditing && (
             <TouchableOpacity 
               style={[styles.editButton, { backgroundColor: tokens.colors.accent.primary }]}
               onPress={() => setIsEditing(true)}
             >
-              <Ionicons name="create-outline" size={20} color="#FFF" />
-              <Text style={styles.editButtonText}>Змінити</Text>
+              <Ionicons name="create-outline" size={16} color="#FFF" />
             </TouchableOpacity>
           )}
         </View>
@@ -172,16 +226,16 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         {isEditing ? (
           <View>
             <Input
-              label="Название"
+              label={t('airline.name')}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
-              placeholder="Напр. Air Astana"
+              placeholder={t('airline.placeholders.name')}
             />
 
             <View style={styles.row}>
               <View style={{ flex: 1, marginRight: 8 }}>
                 <Input
-                  label="Код IATA (2 буквы)"
+                  label={`${t('airline.iataCode')} ${t('common.letters_2')}`}
                   value={formData.iataCode}
                   onChangeText={(text) => setFormData({ ...formData, iataCode: text.toUpperCase() })}
                   placeholder="KC"
@@ -190,7 +244,7 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               </View>
               <View style={{ flex: 1, marginLeft: 8 }}>
                 <Input
-                  label="Код ICAO (3 буквы)"
+                  label={`${t('airline.icaoCode')} ${t('common.letters_3')}`}
                   value={formData.icaoCode || ''}
                   onChangeText={(text) => setFormData({ ...formData, icaoCode: text.toUpperCase() })}
                   placeholder="KZR"
@@ -200,14 +254,14 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             <Input
-              label="Страна"
+              label={t('airline.country')}
               value={formData.country}
               onChangeText={(text) => setFormData({ ...formData, country: text })}
-              placeholder="Напр. Kazakhstan"
+              placeholder={t('airline.placeholders.country')}
             />
 
             <Input
-              label="Ссылка на регистрацию (HTTPS)"
+              label={t('airline.registrationUrl')}
               value={formData.registrationUrl || ''}
               onChangeText={(text) => setFormData({ ...formData, registrationUrl: text })}
               placeholder="https://..."
@@ -215,47 +269,70 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             />
 
             <Input
-              label="Телефон поддержки"
+              label={t('airline.supportPhone')}
               value={formData.supportPhone || ''}
               onChangeText={(text) => setFormData({ ...formData, supportPhone: text })}
               placeholder="+..."
               keyboardType="phone-pad"
             />
 
+            <Input
+              label={t('airline.checkInHoursBefore')}
+              value={formData.checkInHoursBefore.toString()}
+              onChangeText={(text) => setFormData({ ...formData, checkInHoursBefore: parseInt(text) || 0 })}
+              placeholder="24"
+              keyboardType="number-pad"
+            />
+
             <View style={styles.buttonContainer}>
               <PillButton 
-                title={isSaving ? 'Сохранение...' : 'Сохранить'} 
+                title={isSaving ? t('common.loading') : t('common.save')} 
                 onPress={handleSave}
                 disabled={isSaving}
+                style={styles.actionButton}
               />
               
-              <TouchableOpacity onPress={() => isNew ? navigation.goBack() : setIsEditing(false)} style={styles.cancelLink}>
-                <Text style={[styles.cancelLinkText, { color: tokens.colors.text.secondary }]}>Отмена</Text>
-              </TouchableOpacity>
+              <PillButton 
+                title={t('common.cancel')} 
+                variant="secondary"
+                onPress={() => isNew ? navigation.goBack() : setIsEditing(false)} 
+                style={styles.actionButton}
+              />
 
               {!isNew && (
-                <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-                  <Text style={styles.deleteButtonText}>Удалить авиакомпанию</Text>
-                </TouchableOpacity>
+                <PillButton 
+                  title={t('airline.deleteAirline')} 
+                  onPress={handleDelete}
+                  style={[styles.actionButton, styles.deleteButton, { marginTop: 40 }]}
+                />
               )}
             </View>
           </View>
         ) : (
           <View style={styles.viewContainer}>
-            <View style={[styles.mainCard, { backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#F8F9FA' }]}>
-              {renderInfoItem('Страна', formData.country, 'globe-outline')}
+            <Card style={styles.mainCard}>
+              {renderInfoItem(t('airline.country'), formData.country, 'globe-outline')}
               <View style={styles.row}>
                 <View style={{ flex: 1 }}>
-                  {renderInfoItem('IATA', formData.iataCode, 'airplane-outline')}
+                  {renderInfoItem(t('airline.iataCode'), formData.iataCode, 'airplane-outline')}
                 </View>
                 <View style={{ flex: 1 }}>
-                  {renderInfoItem('ICAO', formData.icaoCode, 'barcode-outline')}
+                  {renderInfoItem(t('airline.icaoCode'), formData.icaoCode, 'barcode-outline')}
                 </View>
               </View>
-              {renderInfoItem('Сайт регистрации', formData.registrationUrl, 'link-outline')}
-              {renderInfoItem('Телефон поддержки', formData.supportPhone, 'call-outline')}
-              {renderInfoItem('Начало регистрации за (часов)', formData.checkInHoursBefore, 'time-outline')}
-            </View>
+              {renderInfoItem(t('airline.registrationUrl'), formData.registrationUrl, 'link-outline')}
+              {renderInfoItem(t('airline.supportPhone'), formData.supportPhone, 'call-outline')}
+              {renderInfoItem(t('airline.checkInHoursBefore'), formData.checkInHoursBefore, 'time-outline', true)}
+              
+              {formData.registrationUrl && (
+                <PillButton 
+                  title={t('airline.openWebsite') || 'Go to Registration'} 
+                  onPress={() => openUrl(formData.registrationUrl!)}
+                  style={{ marginTop: 24 }}
+                  icon="open-outline"
+                />
+              )}
+            </Card>
           </View>
         )}
       </ScrollView>
@@ -268,7 +345,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
     paddingBottom: 50,
   },
   header: {
@@ -277,67 +354,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    flex: 1,
-  },
-  editButton: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginLeft: 12,
+    flex: 1,
+    marginRight: 8,
   },
-  editButtonText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 14,
-    marginLeft: 6,
+  title: {
+    fontSize: 17,
+    fontWeight: '800',
+    marginLeft: 10,
+    flexShrink: 1,
+    lineHeight: 21,
+  },
+  backButton: {
+    padding: 4,
+  },
+  editButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    marginTop: 4,
   },
   row: {
     flexDirection: 'row',
   },
   buttonContainer: {
-    marginTop: 30,
+    marginTop: 20,
   },
-  cancelLink: {
-    marginTop: 16,
-    alignItems: 'center',
-    padding: 8,
-  },
-  cancelLinkText: {
-    fontSize: 16,
-    fontWeight: '500',
+  actionButton: {
+    marginBottom: 12,
+    width: '80%',
+    alignSelf: 'center',
   },
   deleteButton: {
-    marginTop: 30,
-    alignItems: 'center',
-    padding: 10,
-  },
-  deleteButtonText: {
-    color: '#FF3B30',
-    fontWeight: '600',
+    backgroundColor: '#FF3B30',
   },
   viewContainer: {
     marginTop: 8,
   },
   mainCard: {
     borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    padding: 24,
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -346,14 +416,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   infoValue: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

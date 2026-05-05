@@ -361,6 +361,46 @@ export class AirlineRepository {
   }
 
   /**
+   * Проверить, была ли выполнена инициализация V7 (добавление URL регистрации)
+   */
+  async isInitializedV8(): Promise<boolean> {
+    const db = await databaseService.getDatabase();
+    const result = await db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM app_meta WHERE key = ?',
+      ['is_seeded_v8']
+    );
+
+    return result?.value === 'true';
+  }
+
+  /**
+   * Хирургическое обновление данных (только URL регистрации) без удаления пользовательских данных
+   */
+  async updateUrlsSurgically(seedData: Omit<Airline, 'id' | 'updatedAt'>[]): Promise<void> {
+    const db = await databaseService.getDatabase();
+    const updatedAt = new Date().toISOString();
+
+    console.log('Surgical update started for', seedData.length, 'airlines');
+
+    for (const airline of seedData) {
+      if (airline.registrationUrl) {
+        // Обновляем, если ссылка пустая, null или короче 10 символов (явно не полный URL)
+        await db.runAsync(
+          `UPDATE airlines SET registration_url = ?, updated_at = ? 
+           WHERE iata_code = ? AND (registration_url IS NULL OR length(registration_url) < 10)`,
+          [airline.registrationUrl, updatedAt, airline.iataCode]
+        );
+      }
+    }
+
+    // Устанавливаем флаг инициализации V8
+    await db.runAsync(
+      'INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)',
+      ['is_seeded_v8', 'true']
+    );
+  }
+
+  /**
    * Заменить все авиакомпании (для восстановления из бэкапа)
    */
   async replaceAll(airlines: Airline[]): Promise<void> {

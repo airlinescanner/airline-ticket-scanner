@@ -1,64 +1,88 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as FileSystem from 'expo-file-system/legacy';
 import { TicketData } from "../types/ticket";
-
-// Исправил ключ (заменил l на I в конце)
-const GEMINI_API_KEY = "AIzaSyBt3yHInwuViKOil6yQ-sZhSDdV_ZAIGfk";
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+import { API_CONFIG } from "../config/ApiConfig";
+import { secretService } from "./SecretService";
 
 export class GeminiService {
+  
   async analyzeTicket(imageUri: string): Promise<TicketData[]> {
-    try {
-      // Используем прямое указание кодировки для стабильности
-      const base64Image = await FileSystem.readAsStringAsync(imageUri, {
-        encoding: 'base64',
-      });
+    const apiKey = await secretService.getApiKey();
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    let lastError = null;
 
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    for (const modelName of API_CONFIG.MODELS) {
+      // Пробуем модель с 3 попытками (на случай ошибки 429)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`[GeminiService] Attempt ${attempt} for model: ${modelName}`);
+          const result = await this.executeAnalysis(genAI, modelName, imageUri);
+          if (result) return result;
+        } catch (error: any) {
+          lastError = error;
+          
+          // Если это ошибка лимита (429), ждем и пробуем еще раз
+          if (error.message?.includes('429') && attempt < 3) {
+            console.warn(`[GeminiService] Rate limited. Waiting 2s before retry...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
 
-      const prompt = `
-        Identify all flight segments from this airline ticket image.
-        Extract the following information for EACH segment:
-        - passengerName: Full name of the traveler (e.g. Mrs Tetiana Ostrikova Chmeruk)
-        - airlineName: Full official name of the airline
-        - airlineCode: 2-letter IATA code
-        - flightNumber: Full flight number
-        - departureDate: Date of departure in ISO 8601 format (YYYY-MM-DD). If year is missing, assume 2026.
-        - departureTime: Time of departure in HH:mm format.
-        - departureCity: Name of the departure city.
-        - departureCountry: Name of the departure country.
-        - departureAirport: 3-letter IATA code of departure airport.
-        - arrivalAirport: 3-letter IATA code of arrival airport.
-        - seat: Assigned seat number or null.
-        - serviceClass: Class of service (Economy, Business, First).
-        
-        CRITICAL: Return ONLY a raw JSON array of objects. No markdown, no backticks, no extra text.
-      `;
+          // Если ключ неверный, выходим сразу
+          if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('403')) {
+            throw new Error("API Key Error: Ваш ключ недействителен.");
+          }
+          
+          // В остальных случаях (404 и т.д.) пробуем следующую модель из списка
+          break; 
+        }
+      }
+    }
 
-      const result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: base64Image,
-            mimeType: "image/jpeg",
-          },
+    throw lastError || new Error("Не удалось распознать билет. Попробуйте позже.");
+  }
+
+  private async executeAnalysis(genAI: any, modelName: string, imageUri: string): Promise<TicketData[]> {
+    const base64Image = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: 'base64',
+    });
+
+    // Оставляем дефолтное поведение SDK
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    const prompt = `
+      Extract flight details from this ticket image.
+      passengerName, airlineName, airlineCode, flightNumber, 
+      departureDate (YYYY-MM-DD), departureTime, 
+      departureCity, departureCountry, departureAirport, 
+      arrivalCity, arrivalCountry, arrivalAirport, 
+      seat, serviceClass, bookingReference.
+      Return JSON array ONLY.
+    `;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64Image,
+          mimeType: "image/jpeg",
         },
-      ]);
+      },
+    ]);
 
-      const response = await result.response;
-      let text = response.text();
-      text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    const response = await result.response;
+    let text = response.text();
+    text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
+    try {
       const parsedData = JSON.parse(text);
       return parsedData.map((item: any) => ({
         ...item,
         rawJson: JSON.stringify(item, null, 2)
       }));
-
-    } catch (error: any) {
-      console.error("Gemini AI Error details:", error);
-      throw new Error(`AI Analysis failed: ${error.message || 'Unknown error'}`);
+    } catch (e) {
+      throw new Error("AI returned invalid JSON.");
     }
   }
 }

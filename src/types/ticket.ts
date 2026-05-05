@@ -10,8 +10,11 @@ export interface TicketData {
   departureCountry: string | null;  
   departureAirport: string | null;  // IATA-код или название
   arrivalAirport: string | null;    // IATA-код или название
+  arrivalCity: string | null;
+  arrivalCountry: string | null;
   seat: string | null;
   serviceClass: string | null;
+  bookingReference: string | null;
   rawJson: string;                  
 }
 
@@ -27,10 +30,25 @@ export interface Ticket {
   departureCountry: string | null;
   departureAirport: string;
   arrivalAirport: string;
+  arrivalCity: string | null;
+  arrivalCountry: string | null;
   seat: string | null;
   serviceClass: string | null;
   rawJson: string;
   scannedAt: string;          // ISO 8601
   notificationEnabled: boolean;
   notificationId: string | null;
+  bookingReference: string | null;
+  tripId: number | null;
+}
+
+export interface Trip {
+  id: number;
+  passengerName: string;
+  pnr: string | null;
+  title: string | null;
+  status: 'active' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+  tickets?: Ticket[]; // Массив билетов, входящих в эту поездку
 }

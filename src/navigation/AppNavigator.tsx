@@ -16,6 +16,7 @@ import { ScanResultScreen } from '../screens/ScanResultScreen';
 import { RegistrationDateScreen } from '../screens/RegistrationDateScreen';
 import { AirlineDetailScreen } from '../screens/AirlineDetailScreen';
 import { TicketDetailScreen } from '../screens/TicketDetailScreen';
+import { TripDetailScreen } from '../screens/TripDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -36,6 +37,7 @@ export const AppNavigator: React.FC = () => {
           },
           headerTintColor: tokens.colors.icon.active,
           headerShadowVisible: false,
+          headerBackTitleVisible: false,
           animation: 'slide_from_right',
         }}
       >
@@ -62,13 +64,18 @@ export const AppNavigator: React.FC = () => {
         <Stack.Screen
           name="AirlineDetail"
           component={AirlineDetailScreen}
-          options={{ title: 'Авіакомпанія' }}
+          options={{ headerShown: false }}
         />
 
         <Stack.Screen
           name="TicketDetail"
           component={TicketDetailScreen}
-          options={{ title: 'Деталі квитка' }}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="TripDetail"
+          component={TripDetailScreen}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -26,6 +26,7 @@
     "cancel": "Скасувати",
     "save": "Зберегти",
     "delete": "Видалити",
+    "confirmDelete": "Ви впевнені, що хочете видалити цей квиток?",
     "edit": "Редагувати",
     "back": "Назад",
     "next": "Далі",
@@ -33,7 +34,9 @@
     "loading": "Завантаження...",
     "error": "Помилка",
     "success": "Успішно",
-    "retry": "Спробувати знову"
+    "retry": "Спробувати знову",
+    "letters_2": "(2 символи)",
+    "letters_3": "(3 символи)"
   },
   "theme": {
     "light": "Світла",
@@ -58,7 +61,8 @@
     "passengerName": "Ім'я пасажира",
     "airlineCode": "Код авіакомпанії",
     "flightNumber": "Номер рейсу",
-    "departureDate": "Дата вильоту",
+    "departureDate": "Дата",
+    "departureTime": "Час",
     "departureAirport": "Аеропорт відправлення",
     "arrivalAirport": "Аеропорт прибуття",
     "seat": "Місце",
@@ -70,7 +74,12 @@
     "history": "Історія квитків",
     "history_tab": "Історія",
     "emptyHistory": "Історія квитків порожня. Відскануйте перший квиток!",
-    "scannedAt": "Відскановано"
+    "scannedAt": "Відскановано",
+    "flights": "рейсів",
+    "savedSuccess": "Квитки успішно збережено"
+  },
+  "trip": {
+    "confirmDelete": "Видалити всю поїздку та всі квитки?"
   },
   "airline": {
     "title": "Авіакомпанії",
@@ -79,18 +88,20 @@
     "search": "Пошук авіакомпаній",
     "notFound": "Авіакомпанія не знайдена в реєстрі",
     "addManually": "Додати вручну",
-    "iataCode": "Код IATA",
-    "icaoCode": "Код ICAO",
+    "iataCode": "IATA",
+    "icaoCode": "ICAO",
     "name": "Назва",
     "country": "Країна",
     "logoUrl": "URL логотипу",
-    "registrationUrl": "URL реєстрації",
+    "registrationUrl": "Сайт реєстрації",
     "supportPhone": "Телефон підтримки",
-    "checkInHoursBefore": "Реєстрація за (годин)",
+    "checkInHoursBefore": "Реєстрація відкривається за (год)",
+    "openWebsite": "Перейти до реєстрації",
     "notes": "Примітки",
     "updatedAt": "Оновлено",
     "emptySearch": "Авіакомпанії не знайдені",
     "deleteConfirm": "Видалити авіакомпанію {{name}}?",
+    "deleteAirline": "Видалити авіакомпанію",
     "deleteWarning": "Це вплине на {{count}} квитків",
     "validation": {
       "iataLength": "Код IATA повинен містити рівно 2 символи",
@@ -99,6 +110,10 @@
       "invalidUrl": "Невірний формат URL (повинен починатися з https://)",
       "invalidHours": "Значення повинно бути від 1 до 720 годин",
       "duplicateCode": "Авіакомпанія з таким кодом вже існує"
+    },
+    "placeholders": {
+      "name": "Напр. Air Astana",
+      "country": "Напр. Казахстан"
     }
   },
   "registration": {
@@ -107,6 +122,9 @@
     "airlineInfo": "Інформація про авіакомпанію",
     "goToWebsite": "Перейти на сайт реєстрації",
     "alreadyOpened": "Реєстрація вже відкрита",
+    "online_registration": "ОНЛАЙН РЕЄСТРАЦІЯ",
+    "opens": "Відкривається",
+    "localTimeIn": "(Місцевий час у {{city}})",
     "timeLeftDays": "через {{days}} дн. {{hours}} год.",
     "timeLeftHours": "через {{hours}} год. {{minutes}} хв.",
     "timeLeftMinutes": "через {{minutes}} хв."
@@ -117,13 +135,17 @@
     "permissionDenied": "Доступ до сповіщень заборонено",
     "permissionInstructions": "Будь ласка, надайте доступ до сповіщень в налаштуваннях пристрою",
     "enabled": "Сповіщення увімкнено",
-    "disabled": "Сповіщення вимкнено"
+    "disabled": "Сповіщення вимкнено",
+    "enable_button": "Увімкнути сповіщення",
+    "active_button": "Сповіщення активне"
   },
   "settings": {
     "title": "Налаштування",
     "tab": "Налаштування",
     "theme": "Тема оформлення",
     "language": "Мова інтерфейсу",
+    "chooseTheme": "Оберіть тему оформлення",
+    "chooseLanguage": "Оберіть мову інтерфейсу",
     "backup": "Резервне копіювання",
     "lastBackup": "Остання резервна копія",
     "neverBackedUp": "Резервна копія не створювалася",
@@ -133,6 +155,6 @@
     "backupSuccess": "Резервна копія успішно створена",
     "restoreSuccess": "Дані успішно відновлені",
     "invalidBackup": "Невірний файл резервної копії",
-    "unsupportedVersion": "Непідтримувана версія схеми"
+    "unsupportedVersion": "Непідтримувана версія схеми",
   }
 }

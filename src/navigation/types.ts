@@ -45,6 +45,11 @@ export type RootStackParamList = {
   TicketDetail: {
     ticketId: number;
   };
+  
+  // Экран деталей поездки (группа билетов)
+  TripDetail: {
+    tripId: number;
+  };
 };
 
 /**

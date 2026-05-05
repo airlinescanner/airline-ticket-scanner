@@ -26,6 +26,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this ticket?",
     "edit": "Edit",
     "back": "Back",
     "next": "Next",
@@ -33,7 +34,9 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "retry": "Retry"
+    "retry": "Retry",
+    "letters_2": "(2 letters)",
+    "letters_3": "(3 letters)"
   },
   "theme": {
     "light": "Light",
@@ -58,7 +61,8 @@
     "passengerName": "Passenger Name",
     "airlineCode": "Airline Code",
     "flightNumber": "Flight Number",
-    "departureDate": "Departure Date",
+    "departureDate": "Date",
+    "departureTime": "Time",
     "departureAirport": "Departure Airport",
     "arrivalAirport": "Arrival Airport",
     "seat": "Seat",
@@ -70,7 +74,12 @@
     "history": "Ticket History",
     "history_tab": "History",
     "emptyHistory": "Ticket history is empty. Scan your first ticket!",
-    "scannedAt": "Scanned at"
+    "scannedAt": "Scanned at",
+    "flights": "flights",
+    "savedSuccess": "Tickets saved successfully"
+  },
+  "trip": {
+    "confirmDelete": "Delete entire trip and all its tickets?"
   },
   "airline": {
     "title": "Airlines",
@@ -87,11 +96,13 @@
     "registrationUrl": "Registration URL",
     "supportPhone": "Support Phone",
     "checkInHoursBefore": "Check-in hours before",
-    "notes": "Notes",
+    "openWebsite": "Go to Online Check-in",
+    "deleteAirline": "Delete Airline",
     "updatedAt": "Updated",
     "emptySearch": "No airlines found",
     "deleteConfirm": "Delete airline {{name}}?",
     "deleteWarning": "This will affect {{count}} tickets",
+    "notes": "Notes",
     "validation": {
       "iataLength": "IATA code must be exactly 2 characters",
       "icaoLength": "ICAO code must be exactly 3 characters",
@@ -99,6 +110,10 @@
       "invalidUrl": "Invalid URL format (must start with https://)",
       "invalidHours": "Value must be between 1 and 720 hours",
       "duplicateCode": "Airline with this code already exists"
+    },
+    "placeholders": {
+      "name": "e.g. Air Astana",
+      "country": "e.g. Kazakhstan"
     }
   },
   "registration": {
@@ -107,6 +122,9 @@
     "airlineInfo": "Airline Information",
     "goToWebsite": "Go to Registration Website",
     "alreadyOpened": "Registration is already open",
+    "online_registration": "ONLINE REGISTRATION",
+    "opens": "Opens",
+    "localTimeIn": "(Local time in {{city}})",
     "timeLeftDays": "in {{days}} d. {{hours}} h.",
     "timeLeftHours": "in {{hours}} h. {{minutes}} m.",
     "timeLeftMinutes": "in {{minutes}} m."
@@ -117,13 +135,17 @@
     "permissionDenied": "Notification access denied",
     "permissionInstructions": "Please grant notification access in device settings",
     "enabled": "Notifications enabled",
-    "disabled": "Notifications disabled"
+    "disabled": "Notifications disabled",
+    "enable_button": "Enable Notification",
+    "active_button": "Notification Active"
   },
   "settings": {
     "title": "Settings",
     "tab": "Settings",
     "theme": "Theme",
     "language": "Interface Language",
+    "chooseTheme": "Choose theme",
+    "chooseLanguage": "Choose language",
     "backup": "Backup",
     "lastBackup": "Last Backup",
     "neverBackedUp": "Never backed up",
@@ -133,6 +155,6 @@
     "backupSuccess": "Backup created successfully",
     "restoreSuccess": "Data restored successfully",
     "invalidBackup": "Invalid backup file",
-    "unsupportedVersion": "Unsupported schema version"
+    "unsupportedVersion": "Unsupported schema version",
   }
 }

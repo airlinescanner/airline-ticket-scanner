@@ -26,6 +26,7 @@
     "cancel": "Отмена",
     "save": "Сохранить",
     "delete": "Удалить",
+    "confirmDelete": "Вы уверены, что хотите удалить этот билет?",
     "edit": "Редактировать",
     "back": "Назад",
     "next": "Далее",
@@ -33,7 +34,9 @@
     "loading": "Загрузка...",
     "error": "Ошибка",
     "success": "Успешно",
-    "retry": "Попробовать снова"
+    "retry": "Попробовать снова",
+    "letters_2": "(2 символа)",
+    "letters_3": "(3 символа)"
   },
   "theme": {
     "light": "Светлая",
@@ -58,7 +61,8 @@
     "passengerName": "Имя пассажира",
     "airlineCode": "Код авиакомпании",
     "flightNumber": "Номер рейса",
-    "departureDate": "Дата вылета",
+    "departureDate": "Дата",
+    "departureTime": "Время",
     "departureAirport": "Аэропорт отправления",
     "arrivalAirport": "Аэропорт прибытия",
     "seat": "Место",
@@ -70,7 +74,12 @@
     "history": "История билетов",
     "history_tab": "История",
     "emptyHistory": "История билетов пуста. Отсканируйте первый билет!",
-    "scannedAt": "Отсканировано"
+    "scannedAt": "Отсканировано",
+    "flights": "рейсов",
+    "savedSuccess": "Билеты успешно сохранены"
+  },
+  "trip": {
+    "confirmDelete": "Удалить всю поездку и все билеты?"
   },
   "airline": {
     "title": "Авиакомпании",
@@ -79,15 +88,16 @@
     "search": "Поиск авиакомпаний",
     "notFound": "Авиакомпания не найдена в реестре",
     "addManually": "Добавить вручную",
-    "iataCode": "Код IATA",
-    "icaoCode": "Код ICAO",
+    "iataCode": "IATA",
+    "icaoCode": "ICAO",
     "name": "Название",
     "country": "Страна",
     "logoUrl": "URL логотипа",
-    "registrationUrl": "URL регистрации",
+    "registrationUrl": "Сайт регистрации",
     "supportPhone": "Телефон поддержки",
-    "checkInHoursBefore": "Регистрация за (часов)",
-    "notes": "Примечания",
+    "checkInHoursBefore": "Регистрация открывается за (ч)",
+    "openWebsite": "Перейти к регистрации",
+    "deleteAirline": "Удалить авиакомпанию",
     "updatedAt": "Обновлено",
     "emptySearch": "Авиакомпании не найдены",
     "deleteConfirm": "Удалить авиакомпанию {{name}}?",
@@ -99,6 +109,10 @@
       "invalidUrl": "Неверный формат URL (должен начинаться с https://)",
       "invalidHours": "Значение должно быть от 1 до 720 часов",
       "duplicateCode": "Авиакомпания с таким кодом уже существует"
+    },
+    "placeholders": {
+      "name": "Напр. Air Astana",
+      "country": "Напр. Казахстан"
     }
   },
   "registration": {
@@ -107,6 +121,9 @@
     "airlineInfo": "Информация об авиакомпании",
     "goToWebsite": "Перейти на сайт регистрации",
     "alreadyOpened": "Регистрация уже открыта",
+    "online_registration": "ОНЛАЙН РЕГИСТРАЦИЯ",
+    "opens": "Открывается",
+    "localTimeIn": "(Местное время в {{city}})",
     "timeLeftDays": "через {{days}} дн. {{hours}} час.",
     "timeLeftHours": "через {{hours}} час. {{minutes}} мин.",
     "timeLeftMinutes": "через {{minutes}} мин."
@@ -117,13 +134,17 @@
     "permissionDenied": "Доступ к уведомлениям запрещён",
     "permissionInstructions": "Пожалуйста, предоставьте доступ к уведомлениям в настройках устройства",
     "enabled": "Уведомления включены",
-    "disabled": "Уведомления отключены"
+    "disabled": "Уведомления отключены",
+    "enable_button": "Включить уведомления",
+    "active_button": "Уведомление активно"
   },
   "settings": {
     "title": "Настройки",
     "tab": "Настройки",
     "theme": "Тема оформления",
     "language": "Язык интерфейса",
+    "chooseTheme": "Выберите тему оформления",
+    "chooseLanguage": "Выберите язык интерфейса",
     "backup": "Резервное копирование",
     "lastBackup": "Последняя резервная копия",
     "neverBackedUp": "Резервная копия не создавалась",
@@ -133,6 +154,6 @@
     "backupSuccess": "Резервная копия успешно создана",
     "restoreSuccess": "Данные успешно восстановлены",
     "invalidBackup": "Неверный файл резервной копии",
-    "unsupportedVersion": "Неподдерживаемая версия схемы"
+    "unsupportedVersion": "Неподдерживаемая версия схемы",
   }
 }

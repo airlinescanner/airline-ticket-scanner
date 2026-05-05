@@ -60,6 +60,19 @@ class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_airlines_name ON airlines(name COLLATE NOCASE);
     `);
 
+    // Таблица поездок (Trips)
+    await this.db.execAsync(`
+      CREATE TABLE IF NOT EXISTS trips (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        passenger_name TEXT NOT NULL,
+        pnr            TEXT,
+        title          TEXT,
+        status         TEXT DEFAULT 'active',
+        created_at     TEXT NOT NULL,
+        updated_at     TEXT NOT NULL
+      );
+    `);
+
     // Таблица билетов
     await this.db.execAsync(`
       CREATE TABLE IF NOT EXISTS tickets (
@@ -74,12 +87,17 @@ class DatabaseService {
         departure_country    TEXT,
         departure_airport    TEXT NOT NULL,
         arrival_airport      TEXT NOT NULL,
+        arrival_city         TEXT,
+        arrival_country      TEXT,
         seat                 TEXT,
         service_class        TEXT,
         raw_json             TEXT NOT NULL,
         scanned_at           TEXT NOT NULL,
         notification_enabled INTEGER NOT NULL DEFAULT 0 CHECK(notification_enabled IN (0, 1)),
-        notification_id      TEXT
+        notification_id      TEXT,
+        booking_reference    TEXT,
+        trip_id              INTEGER,
+        FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE SET NULL
       );
     `);
 
@@ -95,6 +113,18 @@ class DatabaseService {
     } catch (e) {}
     try {
       await this.db.execAsync("ALTER TABLE tickets ADD COLUMN departure_country TEXT;");
+    } catch (e) {}
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN booking_reference TEXT;");
+    } catch (e) {}
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN trip_id INTEGER;");
+    } catch (e) {}
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN arrival_city TEXT;");
+    } catch (e) {}
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN arrival_country TEXT;");
     } catch (e) {}
 
     // Индексы для таблицы tickets

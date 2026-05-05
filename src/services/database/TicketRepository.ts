@@ -19,9 +19,11 @@ export class TicketRepository {
       `INSERT INTO tickets (
         passenger_name, airline_name, airline_code, flight_number, 
         departure_date, departure_time, departure_city, departure_country,
-        departure_airport, arrival_airport, seat, service_class,
-        raw_json, scanned_at, notification_enabled, notification_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        departure_airport, arrival_airport, arrival_city, arrival_country,
+        seat, service_class,
+        raw_json, scanned_at, notification_enabled, notification_id,
+        booking_reference, trip_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         ticket.passengerName,
         ticket.airlineName || null,
@@ -33,12 +35,16 @@ export class TicketRepository {
         ticket.departureCountry || null,
         ticket.departureAirport,
         ticket.arrivalAirport,
+        ticket.arrivalCity || null,
+        ticket.arrivalCountry || null,
         ticket.seat || null,
         ticket.serviceClass || null,
         ticket.rawJson,
         scannedAt,
         ticket.notificationEnabled ? 1 : 0,
         ticket.notificationId || null,
+        ticket.bookingReference || null,
+        ticket.tripId || null,
       ]
     );
 
@@ -139,6 +145,8 @@ export class TicketRepository {
           ticket.scannedAt,
           ticket.notificationEnabled ? 1 : 0,
           ticket.notificationId || null,
+          ticket.bookingReference || null,
+          ticket.tripId || null,
         ]
       );
     }
@@ -147,7 +155,7 @@ export class TicketRepository {
   /**
    * Преобразование строки БД в объект Ticket
    */
-  private mapRowToTicket(row: any): Ticket {
+  public mapRowToTicket(row: any): Ticket {
     return {
       id: row.id,
       passengerName: row.passenger_name,
@@ -160,12 +168,16 @@ export class TicketRepository {
       departureCountry: row.departure_country || null,
       departureAirport: row.departure_airport,
       arrivalAirport: row.arrival_airport,
+      arrivalCity: row.arrival_city || null,
+      arrivalCountry: row.arrival_country || null,
       seat: row.seat,
       serviceClass: row.service_class,
       rawJson: row.raw_json,
       scannedAt: row.scanned_at,
       notificationEnabled: row.notification_enabled === 1,
       notificationId: row.notification_id,
+      bookingReference: row.booking_reference || null,
+      tripId: row.trip_id || null,
     };
   }
 }

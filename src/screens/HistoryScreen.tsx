@@ -5,17 +5,16 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, FlatList } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
-import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
-import { ticketRepository } from '../services/database/TicketRepository';
-import { Ticket } from '../types/ticket';
-import { formatDateToDisplay } from '../utils/dateUtils';
 import type { RootStackParamList } from '../navigation/types';
+import { tripRepository } from '../services/database/TripRepository';
+import { Trip } from '../types/ticket';
+import { TripCard } from '../components/TripCard';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,16 +23,16 @@ export const HistoryScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchTickets = async () => {
+  const fetchTrips = async () => {
     try {
       setIsLoading(true);
-      const data = await ticketRepository.findAll();
-      setTickets(data);
+      const data = await tripRepository.findAllTrips();
+      setTrips(data);
     } catch (error) {
-      console.error('Error fetching tickets:', error);
+      console.error('Error fetching trips:', error);
     } finally {
       setIsLoading(false);
     }
@@ -41,59 +40,30 @@ export const HistoryScreen: React.FC = () => {
 
   useFocusEffect(
     useCallback(() => {
-      fetchTickets();
+      fetchTrips();
     }, [])
   );
 
-  const renderTicket = ({ item }: { item: Ticket }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('TicketDetail', { ticketId: item.id })}>
-      <Card style={styles.card}>
-        <View style={styles.header}>
-          <Text style={[styles.airline, { color: tokens.colors.text.primary }]}>
-            {item.airlineCode} {item.flightNumber}
-          </Text>
-          <Text style={[styles.date, { color: tokens.colors.text.secondary }]}>
-            {formatDateToDisplay(item.departureDate)}
-          </Text>
-        </View>
-        
-        <View style={styles.route}>
-          <Text style={[styles.airport, { color: tokens.colors.text.primary }]}>
-            {item.departureAirport}
-          </Text>
-          <Text style={[styles.arrow, { color: tokens.colors.text.secondary }]}> ✈ </Text>
-          <Text style={[styles.airport, { color: tokens.colors.text.primary }]}>
-            {item.arrivalAirport}
-          </Text>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={[styles.passenger, { color: tokens.colors.text.secondary }]}>
-            {item.passengerName}
-          </Text>
-          {item.seat && (
-            <Text style={[styles.seat, { color: tokens.colors.text.primary }]}>
-              {t('ticket.seat')}: {item.seat}
-            </Text>
-          )}
-        </View>
-      </Card>
-    </TouchableOpacity>
+  const renderTrip = ({ item }: { item: Trip }) => (
+    <TripCard 
+      trip={item} 
+      onPress={() => navigation.navigate('TripDetail', { tripId: item.id })} 
+    />
   );
 
   return (
     <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
       <FlatList
-        data={tickets}
+        data={trips}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={renderTicket}
-        contentContainerStyle={tickets.length === 0 ? styles.emptyContainer : styles.listContainer}
+        renderItem={renderTrip}
+        contentContainerStyle={trips.length === 0 ? styles.emptyContainer : styles.listContainer}
         ListEmptyComponent={
           !isLoading ? (
             <EmptyState
               title={t('ticket.history_tab')}
               message={t('ticket.emptyHistory')}
-              icon="ticket-outline"
+              icon="calendar-outline"
             />
           ) : null
         }
@@ -114,32 +84,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    marginBottom: 16,
+    marginBottom: 10,
+    paddingVertical: 8,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   airline: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: 'bold',
   },
   date: {
-    fontSize: 14,
+    fontSize: 11,
   },
   route: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
   airport: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   arrow: {
-    fontSize: 20,
-    marginHorizontal: 10,
+    fontSize: 13,
+    marginHorizontal: 6,
   },
   footer: {
     flexDirection: 'row',
@@ -147,10 +118,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   passenger: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '500',
   },
   seat: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
   },
 });

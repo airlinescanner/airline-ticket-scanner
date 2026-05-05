@@ -97,7 +97,6 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       message: t('common.confirmDelete'),
       type: 'warning',
       buttons: [
-        { text: t('common.cancel'), style: 'cancel' },
         { 
           text: t('common.delete'), 
           style: 'destructive',
@@ -105,7 +104,8 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             await ticketRepository.delete(ticketId);
             navigation.goBack();
           }
-        }
+        },
+        { text: t('common.cancel'), style: 'cancel' }
       ]
     });
   };
@@ -127,7 +127,7 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           <Ionicons name="arrow-back" size={24} color={tokens.colors.text.primary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: tokens.colors.text.primary }]}>
-          {ticket.airlineCode} {ticket.flightNumber}
+          {ticket.flightNumber.includes(ticket.airlineCode) ? ticket.flightNumber : `${ticket.airlineCode} ${ticket.flightNumber}`}
         </Text>
         <TouchableOpacity onPress={handleShare}>
           <Ionicons name="share-outline" size={24} color={tokens.colors.text.primary} />
@@ -158,17 +158,14 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         <View style={styles.detailsGrid}>
           <View style={styles.detailItem}>
-            <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>DATE</Text>
+            <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>{t('ticket.departureDate').toUpperCase()}</Text>
             <Text style={[styles.detailValue, { color: tokens.colors.text.primary }]}>{formatDateToDisplay(ticket.departureDate)}</Text>
           </View>
           <View style={styles.detailItem}>
-            <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>TIME</Text>
+            <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>{t('ticket.departureTime').toUpperCase()}</Text>
             <Text style={[styles.detailValue, { color: tokens.colors.text.primary }]}>{ticket.departureTime}</Text>
           </View>
-          <View style={styles.detailItem}>
-            <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>SEAT</Text>
-            <Text style={[styles.detailValue, { color: tokens.colors.text.primary }]}>{ticket.seat || 'N/A'}</Text>
-          </View>
+          <View style={styles.detailItem} />
         </View>
       </Card>
 
@@ -176,17 +173,17 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         <View style={styles.regHeader}>
           <Ionicons name="time-outline" size={20} color={tokens.colors.accent.primary} />
           <Text style={[styles.regTitle, { color: tokens.colors.text.primary }]}>
-            ONLINE REGISTRATION
+            {t('registration.online_registration')}
           </Text>
         </View>
         
         {regInfo ? (
           <>
             <Text style={[styles.regOpensAt, { color: tokens.colors.text.primary }]}>
-              Opens: {regInfo.formattedDate}
+              {t('registration.opens')}: {regInfo.formattedDate}
             </Text>
             <Text style={[styles.timezoneNote, { color: tokens.colors.text.secondary }]}>
-              (Local time in {ticket.departureCity || 'departure city'})
+              {t('registration.localTimeIn', { city: ticket.departureCity || 'departure city' })}
             </Text>
             
             <View style={[styles.countdownContainer, { backgroundColor: tokens.colors.background.input }]}>
@@ -211,7 +208,7 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 styles.notificationToggleText, 
                 { color: ticket.notificationEnabled ? "#FFFFFF" : tokens.colors.text.primary }
               ]}>
-                {ticket.notificationEnabled ? 'Notification Active' : 'Enable Notification'}
+                {ticket.notificationEnabled ? t('notification.active_button') : t('notification.enable_button')}
               </Text>
             </TouchableOpacity>
           </>
@@ -224,7 +221,7 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
       <View style={styles.actions}>
         <PillButton 
-          title="Delete Ticket" 
+          title={t('common.delete')} 
           onPress={handleDelete} 
           variant="secondary" 
           style={{ borderColor: tokens.colors.error, borderWidth: 1 }}

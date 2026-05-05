@@ -9,6 +9,7 @@ import { Input } from '../components/Input';
 import { PillButton } from '../components/PillButton';
 import { formatDateToDisplay, parseDisplayDateToISO } from '../utils/dateUtils';
 import { ticketRepository } from '../services/database/TicketRepository';
+import { tripRepository } from '../services/database/TripRepository';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanResult'>;
 
@@ -32,8 +33,11 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
     departureCountry: t.departureCountry || '',
     departureAirport: t.departureAirport || '',
     arrivalAirport: t.arrivalAirport || '',
+    arrivalCity: t.arrivalCity || '',
+    arrivalCountry: t.arrivalCountry || '',
     seat: t.seat || '',
     serviceClass: t.serviceClass || '',
+    bookingReference: t.bookingReference || '',
     rawJson: t.rawJson,
   })));
 
@@ -66,7 +70,29 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
     try {
       setIsSaving(true);
       
-      // Сохраняем каждый рейс как отдельный билет в базе
+      // 1. Сначала определяем или создаем поездку (Trip)
+      // Берем данные первого рейса как основу для поиска поездки
+      const firstFlight = flights[0];
+      const tripId = await tripRepository.findOrCreateTripForTicket({
+        passengerName: passengerName,
+        airlineName: firstFlight.airlineName || null,
+        airlineCode: firstFlight.airlineCode,
+        flightNumber: firstFlight.flightNumber,
+        departureDate: parseDisplayDateToISO(firstFlight.departureDate),
+        departureTime: firstFlight.departureTime,
+        departureCity: firstFlight.departureCity,
+        departureCountry: firstFlight.departureCountry || null,
+        departureAirport: firstFlight.departureAirport,
+        arrivalAirport: firstFlight.arrivalAirport,
+        seat: firstFlight.seat || null,
+        serviceClass: firstFlight.serviceClass || null,
+        bookingReference: firstFlight.bookingReference || null,
+        rawJson: firstFlight.rawJson,
+        notificationEnabled: false,
+        notificationId: null,
+      });
+
+      // 2. Сохраняем каждый рейс как отдельный билет, привязанный к этой поездке
       for (const flight of flights) {
         await ticketRepository.save({
           passengerName: passengerName,
@@ -79,11 +105,15 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
           departureCountry: flight.departureCountry || null,
           departureAirport: flight.departureAirport,
           arrivalAirport: flight.arrivalAirport,
+          arrivalCity: flight.arrivalCity || null,
+          arrivalCountry: flight.arrivalCountry || null,
           seat: flight.seat || null,
           serviceClass: flight.serviceClass || null,
+          bookingReference: flight.bookingReference || null,
           rawJson: flight.rawJson,
           notificationEnabled: false,
           notificationId: null,
+          tripId: tripId,
         });
       }
 
@@ -210,12 +240,31 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                 />
               </View>
             </View>
-
+            <View style={styles.row}>
+              <View style={styles.flexHalf}>
+                <Input
+                  label="Arrival City"
+                  value={flight.arrivalCity}
+                  onChangeText={(text) => handleFlightChange(index, 'arrivalCity', text)}
+                  placeholder="Paris"
+                />
+              </View>
+              <View style={styles.spacing} />
+              <View style={styles.flexHalf}>
+                <Input
+                  label="Arrival Airport"
+                  value={flight.arrivalAirport}
+                  onChangeText={(text) => handleFlightChange(index, 'arrivalAirport', text)}
+                  placeholder="CDG"
+                  autoCapitalize="characters"
+                />
+              </View>
+            </View>
             <Input
-              label={t('ticket.arrivalAirport')}
-              value={flight.arrivalAirport}
-              onChangeText={(text) => handleFlightChange(index, 'arrivalAirport', text)}
-              placeholder="LYS"
+              label="Booking Reference (PNR)"
+              value={flight.bookingReference}
+              onChangeText={(text) => handleFlightChange(index, 'bookingReference', text)}
+              placeholder="AM6X8Y"
               autoCapitalize="characters"
             />
           </View>

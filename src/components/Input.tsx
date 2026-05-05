@@ -27,7 +27,8 @@ export const Input: React.FC<InputProps> = ({ label, error, style, ...props }) =
               ? (tokens?.colors?.status?.error || 'red') 
               : (tokens?.colors?.border?.default || '#CCCCCC'),
             borderRadius: tokens?.borderRadius?.md || 8,
-            padding: tokens?.spacing?.md || 12,
+            paddingVertical: 8,
+            paddingHorizontal: 12,
           },
           style,
         ]}
@@ -45,16 +46,16 @@ export const Input: React.FC<InputProps> = ({ label, error, style, ...props }) =
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
-    marginBottom: 8,
+    marginBottom: 4,
     fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    fontSize: 16,
+    fontSize: 14,
   },
   error: {
     fontSize: 12,

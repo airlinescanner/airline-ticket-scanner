@@ -45,26 +45,26 @@ export const AlertModal: React.FC<AlertModalProps> = ({
   onClose,
 }) => {
   const { tokens, theme } = useTheme();
-  const [scaleAnim] = React.useState(new Animated.Value(0.9));
+  const [slideAnim] = React.useState(new Animated.Value(Dimensions.get('window').height));
   const [opacityAnim] = React.useState(new Animated.Value(0));
 
   React.useEffect(() => {
     if (visible) {
       Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
+        Animated.spring(slideAnim, {
+          toValue: 0,
           useNativeDriver: true,
-          tension: 50,
-          friction: 7,
+          tension: 60,
+          friction: 10,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 200,
+          duration: 300,
           useNativeDriver: true,
         }),
       ]).start();
     } else {
-      scaleAnim.setValue(0.9);
+      slideAnim.setValue(Dimensions.get('window').height);
       opacityAnim.setValue(0);
     }
   }, [visible]);
@@ -84,10 +84,21 @@ export const AlertModal: React.FC<AlertModalProps> = ({
   const icon = getIcon();
 
   const handleButtonPress = (onPress?: () => void) => {
-    onClose();
-    if (onPress) {
-      setTimeout(onPress, 300); // Даем время модалке закрыться
-    }
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: Dimensions.get('window').height,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onClose();
+      if (onPress) onPress();
+    });
   };
 
   return (
@@ -97,7 +108,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
           <TouchableOpacity 
             style={styles.backdropTouch} 
             activeOpacity={1} 
-            onPress={onClose} 
+            onPress={() => handleButtonPress()} 
           />
         </Animated.View>
 
@@ -105,20 +116,17 @@ export const AlertModal: React.FC<AlertModalProps> = ({
           style={[
             styles.container, 
             { 
-              transform: [{ scale: scaleAnim }], 
-              opacity: opacityAnim,
-              backgroundColor: theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-              borderColor: tokens.colors.border,
+              transform: [{ translateY: slideAnim }],
+              backgroundColor: tokens.colors.background.card,
+              paddingBottom: Platform.OS === 'ios' ? 40 : 24,
             }
           ]}
         >
-          {Platform.OS === 'ios' && (
-            <BlurView intensity={theme === 'dark' ? 40 : 60} style={StyleSheet.absoluteFill} tint={theme} />
-          )}
-
+          <View style={[styles.handle, { backgroundColor: tokens.colors.border }]} />
+          
           <View style={styles.content}>
             <View style={[styles.iconContainer, { backgroundColor: icon.color + '15' }]}>
-              <Ionicons name={icon.name as any} size={40} color={icon.color} />
+              <Ionicons name={icon.name as any} size={32} color={icon.color} />
             </View>
 
             <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
@@ -141,8 +149,9 @@ export const AlertModal: React.FC<AlertModalProps> = ({
                       style={[
                         styles.button,
                         index > 0 && styles.buttonMargin,
-                        isCancel && styles.cancelButton,
-                        { borderColor: isCancel ? tokens.colors.border : 'transparent' }
+                        isCancel && { backgroundColor: tokens.colors.background.buttonSecondary },
+                        !isCancel && !isDestructive && { backgroundColor: tokens.colors.accent.primary },
+                        isDestructive && { backgroundColor: '#FF3B30' }
                       ]}
                       onPress={() => handleButtonPress(btn.onPress)}
                     >
@@ -150,8 +159,8 @@ export const AlertModal: React.FC<AlertModalProps> = ({
                         style={[
                           styles.buttonText, 
                           { 
-                            color: isDestructive ? '#FF3B30' : isCancel ? tokens.colors.text.secondary : tokens.colors.accent.primary,
-                            fontWeight: isCancel ? '500' : '700'
+                            color: isCancel ? tokens.colors.text.primary : '#FFFFFF',
+                            fontWeight: '600'
                           }
                         ]}
                       >
@@ -163,7 +172,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
               ) : (
                 <PillButton 
                   title="OK" 
-                  onPress={onClose} 
+                  onPress={() => handleButtonPress()} 
                   style={{ width: '100%' }}
                 />
               )}
@@ -178,62 +187,65 @@ export const AlertModal: React.FC<AlertModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+    justifyContent: 'flex-end',
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   backdropTouch: {
     flex: 1,
   },
   container: {
     width: '100%',
-    maxWidth: 340,
-    borderRadius: 28,
-    borderWidth: 1,
-    overflow: 'hidden',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
       },
       android: {
-        elevation: 10,
+        elevation: 20,
       },
     }),
   },
+  handle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
   content: {
-    padding: 24,
+    paddingHorizontal: 24,
     alignItems: 'center',
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   message: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   footer: {
     width: '100%',
-    flexDirection: 'column',
   },
   button: {
     width: '100%',
@@ -242,12 +254,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   buttonMargin: {
-    marginTop: 8,
-  },
-  cancelButton: {
-    borderWidth: 0,
+    marginTop: 10,
   },
   buttonText: {
-    fontSize: 17,
+    fontSize: 16,
   },
 });

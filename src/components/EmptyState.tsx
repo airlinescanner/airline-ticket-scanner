@@ -1,55 +1,33 @@
-// EmptyState — компонент для отображения пустых состояний списков
-// Требования: 12.2.8, 12.2.10
-
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 
 interface EmptyStateProps {
+  title?: string;
   message: string;
-  icon?: string; // Опциональная иконка (emoji или символ)
+  icon?: string;
 }
 
 /**
  * EmptyState — компонент для пустых состояний
- * 
- * Используется когда:
- * - История билетов пуста
- * - Поиск авиакомпаний не дал результатов
- * - Любой другой пустой список
- * 
- * Применяет токены:
- * - colors.text.secondary для текста сообщения
- * - spacing.vertical для отступов
- * - typography.fontFamily для системного шрифта
  */
-export function EmptyState({ message, icon }: EmptyStateProps): React.JSX.Element {
+export function EmptyState({ title, message, icon }: EmptyStateProps): React.JSX.Element {
   const { tokens } = useTheme();
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingVertical: tokens.spacing.vertical * 4, // 48px вертикальный отступ
-        },
-      ]}
-    >
+    <View style={styles.container}>
       {icon && (
-        <Text style={styles.icon}>{icon}</Text>
+        <View style={[styles.iconContainer, { backgroundColor: tokens.colors.background.buttonSecondary }]}>
+          <Ionicons name={icon as any} size={64} color={tokens.colors.text.secondary} />
+        </View>
       )}
-      <Text
-        style={[
-          styles.message,
-          {
-            color: tokens.colors.text.secondary,
-            fontFamily:
-              Platform.OS === 'ios'
-                ? tokens.typography.fontFamily.ios
-                : tokens.typography.fontFamily.android,
-          },
-        ]}
-      >
+      {title && (
+        <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
+          {title}
+        </Text>
+      )}
+      <Text style={[styles.message, { color: tokens.colors.text.secondary }]}>
         {message}
       </Text>
     </View>
@@ -61,11 +39,22 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
+    paddingVertical: 60,
   },
-  icon: {
-    fontSize: 48,
-    marginBottom: 16,
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 12,
   },
   message: {
     fontSize: 16,
