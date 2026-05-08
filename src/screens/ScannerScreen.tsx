@@ -41,10 +41,7 @@ export const ScannerScreen: React.FC = () => {
       setError(null);
 
       // Захват фото
-      const photo = await cameraRef.current.takePhoto({
-        qualityPrioritization: 'quality',
-        enableAutoStabilization: true,
-      });
+      const photo = await cameraRef.current.takePhoto({});
 
       // TODO: Интеграция OCR и парсинга
       // const ocrResult = await ocrService.recognizeText(`file://${photo.path}`);
@@ -52,17 +49,24 @@ export const ScannerScreen: React.FC = () => {
       
       // Временно: переход с пустыми данными
       navigation.navigate('ScanResult', { 
-        ticketData: {
+        ticketDataList: [{
           passengerName: null,
+          airlineName: null,
           airlineCode: null,
           flightNumber: null,
           departureDate: null,
+          departureTime: null,
+          departureCity: null,
+          departureCountry: null,
           departureAirport: null,
           arrivalAirport: null,
+          arrivalCity: null,
+          arrivalCountry: null,
           seat: null,
           serviceClass: null,
+          bookingReference: null,
           rawJson: '',
-        }
+        }]
       });
     } catch (err: any) {
       console.error('Scan error:', err);
