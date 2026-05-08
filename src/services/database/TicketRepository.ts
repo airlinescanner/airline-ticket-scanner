@@ -22,8 +22,9 @@ export class TicketRepository {
         departure_airport, arrival_airport, arrival_city, arrival_country,
         seat, service_class,
         raw_json, scanned_at, notification_enabled, notification_id,
-        booking_reference, trip_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        booking_reference, trip_id,
+        operating_airline_name, operating_airline_code
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         ticket.passengerName,
         ticket.airlineName || null,
@@ -45,6 +46,8 @@ export class TicketRepository {
         ticket.notificationId || null,
         ticket.bookingReference || null,
         ticket.tripId || null,
+        ticket.operatingAirlineName || null,
+        ticket.operatingAirlineCode || null,
       ]
     );
 
@@ -102,11 +105,48 @@ export class TicketRepository {
   }
 
   /**
+   * Проверить, существует ли уже такой билет в базе (защита от дублей)
+   */
+  async findDuplicate(flightNumber: string, departureDate: string, bookingReference?: string | null): Promise<Ticket | null> {
+    const db = await databaseService.getDatabase();
+    
+    // Нормализуем номер рейса: удаляем буквы авиакомпании и пробелы (оставляем только суть)
+    const cleanFlightNumber = flightNumber.toUpperCase().replace(/[^0-9]/g, '');
+    const cleanPNR = bookingReference?.trim().toUpperCase() || null;
+    
+    const tickets = await db.getAllAsync<any>(
+      'SELECT * FROM tickets WHERE departure_date = ?',
+      [departureDate]
+    );
+
+    for (const row of tickets) {
+      const rowFlightClean = row.flight_number.toUpperCase().replace(/[^0-9]/g, '');
+      const rowPNR = row.booking_reference?.trim().toUpperCase() || null;
+
+      // Если PNR совпадает — это 100% дубликат
+      if (cleanPNR && rowPNR === cleanPNR) {
+        return this.mapRowToTicket(row);
+      }
+
+      // Если номера рейсов (после чистки) совпадают — это дубликат
+      if (rowFlightClean === cleanFlightNumber) {
+        return this.mapRowToTicket(row);
+      }
+    }
+    
+    return null;
+  }
+
+  /**
    * Удалить билет
    */
   async delete(id: number): Promise<void> {
     const db = await databaseService.getDatabase();
     await db.runAsync('DELETE FROM tickets WHERE id = ?', [id]);
+    // Принудительно сбрасываем WAL-кэш
+    try {
+      await db.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
+    } catch (e) {}
   }
 
   /**
@@ -124,9 +164,12 @@ export class TicketRepository {
         `INSERT INTO tickets (
           id, passenger_name, airline_name, airline_code, flight_number, 
           departure_date, departure_time, departure_city, departure_country,
-          departure_airport, arrival_airport, seat, service_class,
-          raw_json, scanned_at, notification_enabled, notification_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          departure_airport, arrival_airport, arrival_city, arrival_country,
+          seat, service_class,
+          raw_json, scanned_at, notification_enabled, notification_id,
+          booking_reference, trip_id,
+          operating_airline_name, operating_airline_code
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           ticket.id,
           ticket.passengerName,
@@ -139,6 +182,8 @@ export class TicketRepository {
           ticket.departureCountry || null,
           ticket.departureAirport,
           ticket.arrivalAirport,
+          ticket.arrivalCity || null,
+          ticket.arrivalCountry || null,
           ticket.seat || null,
           ticket.serviceClass || null,
           ticket.rawJson,
@@ -147,6 +192,8 @@ export class TicketRepository {
           ticket.notificationId || null,
           ticket.bookingReference || null,
           ticket.tripId || null,
+          ticket.operatingAirlineName || null,
+          ticket.operatingAirlineCode || null,
         ]
       );
     }
@@ -161,6 +208,8 @@ export class TicketRepository {
       passengerName: row.passenger_name,
       airlineName: row.airline_name || null,
       airlineCode: row.airline_code,
+      operatingAirlineName: row.operating_airline_name || null,
+      operatingAirlineCode: row.operating_airline_code || null,
       flightNumber: row.flight_number,
       departureDate: row.departure_date,
       departureTime: row.departure_time || '',

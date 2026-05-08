@@ -10,7 +10,8 @@
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Platform, Text } from 'react-native';
+import { Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { BottomTabParamList } from './types';
@@ -21,17 +22,12 @@ import { HistoryScreen } from '../screens/HistoryScreen';
 import { AirlinesScreen } from '../screens/AirlinesScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 
-// Импорт иконок (используем простые эмодзи для MVP, потом заменим на react-native-vector-icons)
-const ScanIcon = '📷';
-const HistoryIcon = '📋';
-const AirlineIcon = '✈️';
-const SettingsIcon = '⚙️';
-
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 export const BottomTabNavigator: React.FC = () => {
-  const { tokens } = useTheme();
+  const { tokens, resolvedTheme } = useTheme();
   const { t } = useTranslation();
+  const headerTopColor = resolvedTheme === 'dark' ? '#082D52' : '#DFEAF5';
 
   return (
     <Tab.Navigator
@@ -40,18 +36,30 @@ export const BottomTabNavigator: React.FC = () => {
         tabBarStyle: {
           backgroundColor: tokens.colors.navigation.background,
           borderTopWidth: 0,
-          elevation: 0,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-          paddingTop: 8,
-          paddingHorizontal: 16,
+          elevation: 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+          position: 'absolute',
+          bottom: Platform.OS === 'ios' ? 28 : 16,
+          left: 24,
+          right: 24,
+          borderRadius: 32,
+          height: 64,
+          paddingBottom: 0,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.1)',
         },
         
         // Стиль лейбла
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
-          marginTop: 4,
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
         },
         
         // Цвета активной/неактивной вкладки
@@ -60,7 +68,7 @@ export const BottomTabNavigator: React.FC = () => {
         
         // Стиль хедера
         headerStyle: {
-          backgroundColor: tokens.colors.background.app,
+          backgroundColor: headerTopColor,
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 0,
@@ -81,7 +89,9 @@ export const BottomTabNavigator: React.FC = () => {
         options={{
           title: t('scanner.title'),
           tabBarLabel: t('scanner.tab'),
-          tabBarIcon: ({ focused, color, size }) => <Text style={{ fontSize: size }}>{ScanIcon}</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'camera' : 'camera-outline'} size={20} color={color} />
+          ),
         }}
       />
       
@@ -91,7 +101,9 @@ export const BottomTabNavigator: React.FC = () => {
         options={{
           title: t('ticket.history'),
           tabBarLabel: t('ticket.history_tab'),
-          tabBarIcon: ({ focused, color, size }) => <Text style={{ fontSize: size }}>{HistoryIcon}</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={20} color={color} />
+          ),
         }}
       />
       
@@ -101,7 +113,9 @@ export const BottomTabNavigator: React.FC = () => {
         options={{
           title: t('airline.list_title'),
           tabBarLabel: t('airline.tab'),
-          tabBarIcon: ({ focused, color, size }) => <Text style={{ fontSize: size }}>{AirlineIcon}</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'airplane' : 'airplane-outline'} size={20} color={color} />
+          ),
         }}
       />
       
@@ -111,7 +125,9 @@ export const BottomTabNavigator: React.FC = () => {
         options={{
           title: t('settings.title'),
           tabBarLabel: t('settings.tab'),
-          tabBarIcon: ({ focused, color, size }) => <Text style={{ fontSize: size }}>{SettingsIcon}</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <Ionicons name={focused ? 'settings' : 'settings-outline'} size={20} color={color} />
+          ),
         }}
       />
     </Tab.Navigator>

@@ -11,6 +11,7 @@ import { notificationScheduler } from '../services/NotificationScheduler';
 import { Ticket } from '../types/ticket';
 import { PillButton } from '../components/PillButton';
 import { Card } from '../components/Card';
+import { ScreenGradient } from '../components/ScreenGradient';
 import { formatDateToDisplay } from '../utils/dateUtils';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -59,6 +60,16 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         }
         await ticketRepository.updateNotification(ticket.id, false, undefined);
       } else {
+        // Если дата в прошлом, не пытаемся планировать уведомление
+        if (regInfo.registrationOpensAt.getTime() < Date.now()) {
+          showAlert({
+            title: t('registration.online_registration'),
+            message: t('registration.alreadyOpened'),
+            type: 'warning'
+          });
+          return;
+        }
+
         const notificationId = await notificationScheduler.schedule(
           ticket,
           regInfo.registrationOpensAt
@@ -112,16 +123,19 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (isLoading || !ticket) {
     return (
-      <View style={[styles.container, { backgroundColor: tokens.colors.background.app, justifyContent: 'center' }]}>
-        <Text style={{ color: tokens.colors.text.secondary }}>{t('common.loading')}...</Text>
-      </View>
+      <ScreenGradient style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={{ color: tokens.colors.text.secondary }}>{t('common.loading')}...</Text>
+        </View>
+      </ScreenGradient>
     );
   }
 
   const timeUntil = regInfo ? registrationMatcher.getTimeUntilRegistration(regInfo.registrationOpensAt) : '';
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+    <ScreenGradient style={styles.wrapper}>
+      <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={tokens.colors.text.primary} />
@@ -144,15 +158,16 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
         <View style={styles.routeContainer}>
           <View style={styles.airportBlock}>
-            <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>{ticket.departureAirport}</Text>
-            <Text style={[styles.city, { color: tokens.colors.text.secondary }]}>{ticket.departureCity}</Text>
+            <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>{ticket.departureCity || ticket.departureAirport}</Text>
+            <Text style={[styles.city, { color: tokens.colors.text.secondary }]}>{ticket.departureAirport}</Text>
           </View>
           <View style={styles.flightIcon}>
             <Ionicons name="airplane" size={30} color={tokens.colors.accent.primary} />
-            <View style={[styles.line, { backgroundColor: tokens.colors.border }]} />
+            <View style={[styles.line, { backgroundColor: tokens.colors.border.default }]} />
           </View>
           <View style={[styles.airportBlock, { alignItems: 'flex-end' }]}>
-            <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>{ticket.arrivalAirport}</Text>
+            <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>{ticket.arrivalCity || ticket.arrivalAirport}</Text>
+            <Text style={[styles.city, { color: tokens.colors.text.secondary }]}>{ticket.arrivalAirport}</Text>
           </View>
         </View>
 
@@ -165,7 +180,10 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>{t('ticket.departureTime').toUpperCase()}</Text>
             <Text style={[styles.detailValue, { color: tokens.colors.text.primary }]}>{ticket.departureTime}</Text>
           </View>
-          <View style={styles.detailItem} />
+          <View style={styles.detailItem}>
+            <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>PNR</Text>
+            <Text style={[styles.detailValue, { color: tokens.colors.status.success }]}>{ticket.bookingReference || '—'}</Text>
+          </View>
         </View>
       </Card>
 
@@ -186,7 +204,7 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               {t('registration.localTimeIn', { city: ticket.departureCity || 'departure city' })}
             </Text>
             
-            <View style={[styles.countdownContainer, { backgroundColor: tokens.colors.background.input }]}>
+            <View style={[styles.countdownContainer, { backgroundColor: tokens.colors.background.card }]}>
               <Text style={[styles.countdownText, { color: tokens.colors.accent.primary }]}>
                 {timeUntil}
               </Text>
@@ -195,7 +213,7 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <TouchableOpacity 
               style={[
                 styles.notificationToggle, 
-                { backgroundColor: ticket.notificationEnabled ? tokens.colors.accent.primary : tokens.colors.background.buttonSecondary }
+                { backgroundColor: ticket.notificationEnabled ? tokens.colors.accent.primary : tokens.colors.background.card }
               ]}
               onPress={handleToggleNotification}
             >
@@ -224,15 +242,18 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           title={t('common.delete')} 
           onPress={handleDelete} 
           variant="secondary" 
-          style={{ borderColor: tokens.colors.error, borderWidth: 1 }}
+          style={{ borderColor: tokens.colors.status.error, borderWidth: 1 }}
         />
       </View>
-    </ScrollView>
+      </ScrollView>
+    </ScreenGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: { flex: 1 },
   container: { flex: 1, padding: 16 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -247,7 +268,7 @@ const styles = StyleSheet.create({
   passengerName: { fontSize: 18, fontWeight: 'bold', marginLeft: 10, textTransform: 'uppercase' },
   routeContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   airportBlock: { flex: 1 },
-  airportCode: { fontSize: 32, fontWeight: 'bold' },
+  airportCode: { fontSize: 18, fontWeight: 'bold' },
   city: { fontSize: 14, marginTop: 4 },
   flightIcon: { flex: 0.5, alignItems: 'center', justifyContent: 'center' },
   line: { height: 1, width: '100%', position: 'absolute', zIndex: -1 },

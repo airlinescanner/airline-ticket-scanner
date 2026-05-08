@@ -1,8 +1,8 @@
 import { registerRootComponent } from 'expo';
 import { LogBox } from 'react-native';
 
-// Игнорируем предупреждения о переезде на новую файловую систему Expo
-LogBox.ignoreLogs(['expo-file-system', 'readAsStringAsync']);
+// Полностью скрываем предупреждения в интерфейсе приложения
+LogBox.ignoreAllLogs();
 
 import App from './App';
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
 import { useTranslation } from 'react-i18next';
@@ -7,9 +7,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Input } from '../components/Input';
 import { PillButton } from '../components/PillButton';
+import { ScreenGradient } from '../components/ScreenGradient';
 import { formatDateToDisplay, parseDisplayDateToISO } from '../utils/dateUtils';
 import { ticketRepository } from '../services/database/TicketRepository';
 import { tripRepository } from '../services/database/TripRepository';
+import { notificationScheduler } from '../services/NotificationScheduler';
+import { registrationMatcher } from '../services/RegistrationMatcher';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanResult'>;
 
@@ -23,23 +26,34 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
   const [passengerName, setPassengerName] = useState(ticketDataList[0]?.passengerName || '');
   
   // Состояние для каждого найденного рейса (сегмента)
-  const [flights, setFlights] = useState(ticketDataList.map(t => ({
-    airlineName: t.airlineName || '',
-    airlineCode: t.airlineCode || '',
-    flightNumber: t.flightNumber || '',
-    departureDate: formatDateToDisplay(t.departureDate) || '', 
-    departureTime: t.departureTime || '',
-    departureCity: t.departureCity || '',
-    departureCountry: t.departureCountry || '',
-    departureAirport: t.departureAirport || '',
-    arrivalAirport: t.arrivalAirport || '',
-    arrivalCity: t.arrivalCity || '',
-    arrivalCountry: t.arrivalCountry || '',
-    seat: t.seat || '',
-    serviceClass: t.serviceClass || '',
-    bookingReference: t.bookingReference || '',
-    rawJson: t.rawJson,
-  })));
+  // Сортируем по дате и времени перед отображением
+  const [flights, setFlights] = useState(
+    [...ticketDataList]
+      .sort((a, b) => {
+        const dateA = new Date(`${a.departureDate}T${a.departureTime || '00:00'}`).getTime();
+        const dateB = new Date(`${b.departureDate}T${b.departureTime || '00:00'}`).getTime();
+        return dateA - dateB;
+      })
+      .map(t => ({
+        airlineName: t.airlineName || '',
+        airlineCode: t.airlineCode || '',
+        flightNumber: t.flightNumber || '',
+        departureDate: formatDateToDisplay(t.departureDate) || '', 
+        departureTime: t.departureTime || '',
+        departureCity: t.departureCity || '',
+        departureCountry: t.departureCountry || '',
+        departureAirport: t.departureAirport || '',
+        arrivalAirport: t.arrivalAirport || '',
+        arrivalCity: t.arrivalCity || '',
+        arrivalCountry: t.arrivalCountry || '',
+        seat: t.seat || '',
+        serviceClass: t.serviceClass || '',
+        bookingReference: t.bookingReference || '',
+        operatingAirlineName: t.operatingAirlineName || '',
+        operatingAirlineCode: t.operatingAirlineCode || '',
+        rawJson: t.rawJson,
+      }))
+  );
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -48,10 +62,10 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
     
     for (let i = 0; i < flights.length; i++) {
       const f = flights[i];
-      if (!f.airlineCode && !f.airlineName) return `Flight ${i+1}: Airline required`;
-      if (!f.flightNumber) return `Flight ${i+1}: Flight number required`;
-      if (!f.departureDate) return `Flight ${i+1}: Departure date required`;
-      if (!f.departureTime) return `Flight ${i+1}: Departure time required`;
+      if (!f.airlineCode && !f.airlineName) return `${t('ticket.flight')} ${i+1}: ${t('airline.validation.required')}`;
+      if (!f.flightNumber) return `${t('ticket.flight')} ${i+1}: ${t('airline.validation.required')}`;
+      if (!f.departureDate) return `${t('ticket.flight')} ${i+1}: ${t('airline.validation.required')}`;
+      if (!f.departureTime) return `${t('ticket.flight')} ${i+1}: ${t('airline.validation.required')}`;
     }
     return null;
   };
@@ -70,6 +84,23 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
     try {
       setIsSaving(true);
       
+      // 0. Проверка на дубликаты
+      for (const flight of flights) {
+        const isoDate = parseDisplayDateToISO(flight.departureDate);
+        const existing = await ticketRepository.findDuplicate(flight.flightNumber, isoDate, flight.bookingReference);
+        
+        if (existing) {
+          setIsSaving(false);
+          showAlert({
+            title: t('common.warning', 'Попередження'),
+            message: `Квиток на рейс ${flight.flightNumber} (${flight.departureDate}) вже існує у вашій історії. Дублювання заборонено.`,
+            type: 'warning',
+            buttons: [{ text: t('common.ok') }]
+          });
+          return; // Полный отказ в сохранении
+        }
+      }
+
       // 1. Сначала определяем или создаем поездку (Trip)
       // Берем данные первого рейса как основу для поиска поездки
       const firstFlight = flights[0];
@@ -84,17 +115,21 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
         departureCountry: firstFlight.departureCountry || null,
         departureAirport: firstFlight.departureAirport,
         arrivalAirport: firstFlight.arrivalAirport,
+        arrivalCity: firstFlight.arrivalCity || null,
+        arrivalCountry: firstFlight.arrivalCountry || null,
         seat: firstFlight.seat || null,
         serviceClass: firstFlight.serviceClass || null,
         bookingReference: firstFlight.bookingReference || null,
+        operatingAirlineName: firstFlight.operatingAirlineName || null,
+        operatingAirlineCode: firstFlight.operatingAirlineCode || null,
         rawJson: firstFlight.rawJson,
-        notificationEnabled: false,
+        notificationEnabled: true,
         notificationId: null,
       });
 
       // 2. Сохраняем каждый рейс как отдельный билет, привязанный к этой поездке
       for (const flight of flights) {
-        await ticketRepository.save({
+        const savedTicket = await ticketRepository.save({
           passengerName: passengerName,
           airlineName: flight.airlineName || null,
           airlineCode: flight.airlineCode || (flight.flightNumber?.substring(0, 2) || ''),
@@ -111,15 +146,37 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
           serviceClass: flight.serviceClass || null,
           bookingReference: flight.bookingReference || null,
           rawJson: flight.rawJson,
-          notificationEnabled: false,
+          notificationEnabled: true,
           notificationId: null,
           tripId: tripId,
+          operatingAirlineName: flight.operatingAirlineName || null,
+          operatingAirlineCode: flight.operatingAirlineCode || null,
         });
+
+        // 3. Автоматически планируем уведомление, если возможно
+        try {
+          const regInfo = await registrationMatcher.match(savedTicket);
+          if (regInfo && regInfo.registrationOpensAt.getTime() > Date.now()) {
+            const notificationId = await notificationScheduler.schedule(savedTicket, regInfo.registrationOpensAt);
+            if (notificationId) {
+              await ticketRepository.updateNotification(savedTicket.id, true, notificationId);
+            }
+          } else if (regInfo && regInfo.registrationOpensAt.getTime() < Date.now()) {
+            // Если дата в прошлом, не пытаемся планировать уведомление
+            showAlert({
+              title: t('registration.online_registration'),
+              message: t('registration.alreadyOpened'),
+              type: 'warning'
+            });
+          }
+        } catch (err) {
+          console.warn('Auto-scheduling notification failed:', err);
+        }
       }
 
       showAlert({
         title: t('common.success'), 
-        message: t('ticket.savedSuccess', 'Квитки успішно збережено'),
+        message: t('ticket.savedSuccess'),
         type: 'success',
         buttons: [{ text: t('common.ok'), onPress: () => navigation.navigate('MainTabs') }]
       });
@@ -135,158 +192,239 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
+  const getConflicts = (index: number) => {
+    try {
+      const raw = JSON.parse(flights[index].rawJson || '{}');
+      return {
+        conflicts: raw.conflicts || [],
+        ai1: raw.ai1 || {},
+        ai2: raw.ai2 || {}
+      };
+    } catch {
+      return { conflicts: [], ai1: {}, ai2: {} };
+    }
+  };
+
+  const passengerConflicts = (() => {
+    try {
+      const raw = JSON.parse(flights[0]?.rawJson || '{}');
+      return {
+        hasConflict: raw.conflicts?.includes('passengerName'),
+        ai1: raw.ai1?.passengerName,
+        ai2: raw.ai2?.passengerName
+      };
+    } catch {
+      return { hasConflict: false };
+    }
+  })();
+
   const handleFlightChange = (index: number, field: keyof typeof flights[0], value: string) => {
     const newFlights = [...flights];
     newFlights[index] = { ...newFlights[index], [field]: value };
     setFlights(newFlights);
   };
 
+  const renderConflictInfo = (field: string, ai1Val: string, ai2Val: string) => {
+    if (!ai1Val && !ai2Val) return null;
+    return (
+      <View style={styles.conflictInfo}>
+        <Text style={styles.conflictTitle}>Mismatch detected:</Text>
+        <Text style={styles.conflictText}>AI 1: <Text style={styles.conflictValue}>{ai1Val || '—'}</Text></Text>
+        <Text style={styles.conflictText}>AI 2: <Text style={styles.conflictValue}>{ai2Val || '—'}</Text></Text>
+      </View>
+    );
+  };
+
   return (
-    <KeyboardAvoidingView 
-      style={[styles.container, { backgroundColor: tokens.colors.background.app }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
-          {t('ticket.confirm', 'Підтвердіть дані')}
-        </Text>
+    <ScreenGradient style={styles.container}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
+            {t('ticket.confirm', 'Підтвердіть дані')}
+          </Text>
+
+          {/* Индикатор оффлайн режима */}
+          {ticketDataList[0]?.rawJson?.includes('"cloud": null') && (
+            <View style={[styles.offlineBadge, { backgroundColor: '#FF9500' }]}>
+              <Text style={styles.offlineText}>Offline Mode: AI analysis unavailable</Text>
+            </View>
+          )}
         
         {/* Блок Пассажира */}
         <View style={[styles.card, { backgroundColor: tokens?.colors?.background?.card || '#FFFFFF' }]}>
           <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
-            PASSENGER
+            {t('ticket.passengerName').toUpperCase()}
           </Text>
           <Input
             label={t('ticket.passengerName')}
             value={passengerName}
             onChangeText={setPassengerName}
             placeholder="IVANOV/IVAN"
+            error={passengerConflicts.hasConflict ? 'Mismatch detected' : undefined}
           />
+          {passengerConflicts.hasConflict && renderConflictInfo('passengerName', passengerConflicts.ai1, passengerConflicts.ai2)}
         </View>
 
         {/* Список Рейсов */}
-        {flights.map((flight, index) => (
-          <View key={index} style={[styles.card, { backgroundColor: tokens?.colors?.background?.card || '#FFFFFF', marginTop: 16 }]}>
-            <Text style={[styles.sectionTitle, { color: tokens.colors.accent?.primary || '#00C853' }]}>
-              FLIGHT SEGMENT {index + 1}
-            </Text>
-            
-            <Input
-              label="Airline Name"
-              value={flight.airlineName}
-              onChangeText={(text) => handleFlightChange(index, 'airlineName', text)}
-              placeholder="Lot Polish Airlines"
+        {flights.map((flight, index) => {
+          const { conflicts, ai1, ai2 } = getConflicts(index);
+          
+          return (
+            <View key={index} style={[styles.card, { backgroundColor: tokens?.colors?.background?.card || '#FFFFFF', marginTop: 16 }]}>
+              <Text style={[styles.sectionTitle, { color: tokens.colors.accent?.primary || '#00C853' }]}>
+                {t('ticket.flight').toUpperCase()} {index + 1}
+              </Text>
+              
+              <Input
+                label={t('ticket.airlineName', 'Airline Name')}
+                value={flight.airlineName}
+                onChangeText={(text) => handleFlightChange(index, 'airlineName', text)}
+                placeholder="Lot Polish Airlines"
+              />
+
+              {!!flight.operatingAirlineName && (
+                <View style={[styles.row, { marginTop: -8, marginBottom: 8 }]}>
+                  <View style={styles.flexHalf}>
+                    <Input
+                      label="Operated by (Name)"
+                      value={flight.operatingAirlineName}
+                      onChangeText={(text) => handleFlightChange(index, 'operatingAirlineName', text)}
+                      placeholder="Air Baltic"
+                    />
+                  </View>
+                  <View style={styles.spacing} />
+                  <View style={styles.flexHalf}>
+                    <Input
+                      label="Operated by (Code)"
+                      value={flight.operatingAirlineCode}
+                      onChangeText={(text) => handleFlightChange(index, 'operatingAirlineCode', text)}
+                      placeholder="BT"
+                      autoCapitalize="characters"
+                    />
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.row}>
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.airlineCode')}
+                    value={flight.airlineCode}
+                    onChangeText={(text) => handleFlightChange(index, 'airlineCode', text)}
+                    placeholder="LO"
+                    autoCapitalize="characters"
+                  />
+                </View>
+                <View style={styles.spacing} />
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.flightNumber')}
+                    value={flight.flightNumber}
+                    onChangeText={(text) => handleFlightChange(index, 'flightNumber', text)}
+                    placeholder="LO347"
+                    autoCapitalize="characters"
+                    error={conflicts.includes('flightNumber') ? 'Mismatch' : undefined}
+                  />
+                </View>
+              </View>
+              {conflicts.includes('flightNumber') && renderConflictInfo('flightNumber', ai1.flightNumber, ai2.flightNumber)}
+
+              <View style={styles.row}>
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.departureDate')}
+                    value={flight.departureDate}
+                    onChangeText={(text) => handleFlightChange(index, 'departureDate', text)}
+                    placeholder="DD.MM.YYYY"
+                    error={conflicts.includes('departureDate') ? 'Mismatch' : undefined}
+                  />
+                </View>
+                <View style={styles.spacing} />
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.departureTime', 'Departure Time')}
+                    value={flight.departureTime}
+                    onChangeText={(text) => handleFlightChange(index, 'departureTime', text)}
+                    placeholder="HH:mm"
+                  />
+                </View>
+              </View>
+              {conflicts.includes('departureDate') && renderConflictInfo('departureDate', ai1.departureDate, ai2.departureDate)}
+
+              <View style={styles.row}>
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.departureCity', 'Departure City')}
+                    value={flight.departureCity}
+                    onChangeText={(text) => handleFlightChange(index, 'departureCity', text)}
+                    placeholder="Warsaw"
+                  />
+                </View>
+                <View style={styles.spacing} />
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.departureAirport', 'Departure Airport')}
+                    value={flight.departureAirport}
+                    onChangeText={(text) => handleFlightChange(index, 'departureAirport', text)}
+                    placeholder="WAW"
+                    autoCapitalize="characters"
+                  />
+                </View>
+              </View>
+              <View style={styles.row}>
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.arrivalCity', 'Arrival City')}
+                    value={flight.arrivalCity}
+                    onChangeText={(text) => handleFlightChange(index, 'arrivalCity', text)}
+                    placeholder="Paris"
+                  />
+                </View>
+                <View style={styles.spacing} />
+                <View style={styles.flexHalf}>
+                  <Input
+                    label={t('ticket.arrivalAirport', 'Arrival Airport')}
+                    value={flight.arrivalAirport}
+                    onChangeText={(text) => handleFlightChange(index, 'arrivalAirport', text)}
+                    placeholder="CDG"
+                    autoCapitalize="characters"
+                  />
+                </View>
+              </View>
+              <Input
+                label={t('ticket.bookingReference', 'Booking Reference (PNR)')}
+                value={flight.bookingReference}
+                onChangeText={(text) => handleFlightChange(index, 'bookingReference', text)}
+                placeholder="AM6X8Y"
+                autoCapitalize="characters"
+                error={conflicts.includes('bookingReference') ? 'Mismatch' : undefined}
+              />
+              {conflicts.includes('bookingReference') && renderConflictInfo('bookingReference', ai1.bookingReference, ai2.bookingReference)}
+            </View>
+          );
+        })}
+
+          <View style={styles.buttonContainer}>
+            <PillButton
+              title={t('common.cancel')}
+              onPress={() => navigation.goBack()}
+              variant="secondary"
+              style={styles.button}
             />
-
-            <View style={styles.row}>
-              <View style={styles.flexHalf}>
-                <Input
-                  label={t('ticket.airlineCode')}
-                  value={flight.airlineCode}
-                  onChangeText={(text) => handleFlightChange(index, 'airlineCode', text)}
-                  placeholder="LO"
-                  autoCapitalize="characters"
-                />
-              </View>
-              <View style={styles.spacing} />
-              <View style={styles.flexHalf}>
-                <Input
-                  label={t('ticket.flightNumber')}
-                  value={flight.flightNumber}
-                  onChangeText={(text) => handleFlightChange(index, 'flightNumber', text)}
-                  placeholder="LO347"
-                  autoCapitalize="characters"
-                />
-              </View>
-            </View>
-
-            <View style={styles.row}>
-              <View style={styles.flexHalf}>
-                <Input
-                  label={t('ticket.departureDate')}
-                  value={flight.departureDate}
-                  onChangeText={(text) => handleFlightChange(index, 'departureDate', text)}
-                  placeholder="DD.MM.YYYY"
-                />
-              </View>
-              <View style={styles.spacing} />
-              <View style={styles.flexHalf}>
-                <Input
-                  label="Departure Time"
-                  value={flight.departureTime}
-                  onChangeText={(text) => handleFlightChange(index, 'departureTime', text)}
-                  placeholder="HH:mm"
-                />
-              </View>
-            </View>
-
-            <View style={styles.row}>
-              <View style={styles.flexHalf}>
-                <Input
-                  label="Departure City"
-                  value={flight.departureCity}
-                  onChangeText={(text) => handleFlightChange(index, 'departureCity', text)}
-                  placeholder="Warsaw"
-                />
-              </View>
-              <View style={styles.spacing} />
-              <View style={styles.flexHalf}>
-                <Input
-                  label="Departure Airport"
-                  value={flight.departureAirport}
-                  onChangeText={(text) => handleFlightChange(index, 'departureAirport', text)}
-                  placeholder="WAW"
-                  autoCapitalize="characters"
-                />
-              </View>
-            </View>
-            <View style={styles.row}>
-              <View style={styles.flexHalf}>
-                <Input
-                  label="Arrival City"
-                  value={flight.arrivalCity}
-                  onChangeText={(text) => handleFlightChange(index, 'arrivalCity', text)}
-                  placeholder="Paris"
-                />
-              </View>
-              <View style={styles.spacing} />
-              <View style={styles.flexHalf}>
-                <Input
-                  label="Arrival Airport"
-                  value={flight.arrivalAirport}
-                  onChangeText={(text) => handleFlightChange(index, 'arrivalAirport', text)}
-                  placeholder="CDG"
-                  autoCapitalize="characters"
-                />
-              </View>
-            </View>
-            <Input
-              label="Booking Reference (PNR)"
-              value={flight.bookingReference}
-              onChangeText={(text) => handleFlightChange(index, 'bookingReference', text)}
-              placeholder="AM6X8Y"
-              autoCapitalize="characters"
+            <PillButton
+              title={isSaving ? t('common.loading') : t('common.save')}
+              onPress={handleSave}
+              variant="primary"
+              style={styles.button}
+              disabled={isSaving}
             />
           </View>
-        ))}
-
-        <View style={styles.buttonContainer}>
-          <PillButton
-            title={t('common.cancel')}
-            onPress={() => navigation.goBack()}
-            variant="secondary"
-            style={styles.button}
-          />
-          <PillButton
-            title={isSaving ? t('common.loading') : t('common.save')}
-            onPress={handleSave}
-            variant="primary"
-            style={styles.button}
-            disabled={isSaving}
-          />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenGradient>
   );
 };
 
@@ -309,4 +447,41 @@ const styles = StyleSheet.create({
   spacing: { width: 16 },
   buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 24 },
   button: { flex: 1, marginHorizontal: 8 },
+  offlineBadge: {
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  offlineText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  conflictInfo: {
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: -8,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF3B30',
+  },
+  conflictTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FF3B30',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  conflictText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.8,
+  },
+  conflictValue: {
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    opacity: 1,
+  },
 });

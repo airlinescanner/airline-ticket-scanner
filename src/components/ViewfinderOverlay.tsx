@@ -10,16 +10,21 @@ import { useTheme } from '../theme/ThemeContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const FRAME_WIDTH = SCREEN_WIDTH * 0.85;
-const FRAME_HEIGHT = Math.min(FRAME_WIDTH * 1.6, SCREEN_HEIGHT * 0.75);
-const CORNER_RADIUS = 24;
+export const FRAME_WIDTH = SCREEN_WIDTH * 0.9;
+export const FRAME_HEIGHT = Math.min(FRAME_WIDTH * 1.6, SCREEN_HEIGHT * 0.8);
+export const CORNER_RADIUS = 24;
+export const VERTICAL_OFFSET = 85;
 
-export const ViewfinderOverlay: React.FC = () => {
+interface ViewfinderOverlayProps {
+  verticalOffset?: number;
+}
+
+export const ViewfinderOverlay: React.FC<ViewfinderOverlayProps> = ({ verticalOffset = VERTICAL_OFFSET }) => {
   const { tokens } = useTheme();
-  const themeColor = tokens?.colors?.accent?.primary || '#F5A623';
+  const themeColor = tokens?.colors?.status?.success || '#00C853';
 
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={[styles.container, { transform: [{ translateY: -verticalOffset }] }]} pointerEvents="none">
       {/* 
         Технология "Hole in the box": 
         Мы берем огромную рамку с толстыми границами. 

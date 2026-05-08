@@ -21,14 +21,15 @@ import { TripDetailScreen } from '../screens/TripDetailScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const AppNavigator: React.FC = () => {
-  const { tokens } = useTheme();
+  const { tokens, resolvedTheme } = useTheme();
+  const headerTopColor = resolvedTheme === 'dark' ? '#082D52' : '#DFEAF5';
 
   return (
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
-            backgroundColor: tokens.colors.background.app,
+            backgroundColor: headerTopColor,
           },
           headerTitleStyle: {
             color: tokens.colors.text.primary,
@@ -37,7 +38,6 @@ export const AppNavigator: React.FC = () => {
           },
           headerTintColor: tokens.colors.icon.active,
           headerShadowVisible: false,
-          headerBackTitleVisible: false,
           animation: 'slide_from_right',
         }}
       >

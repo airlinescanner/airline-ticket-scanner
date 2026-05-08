@@ -29,16 +29,27 @@ yarn-error.*
 # macOS
 .DS_Store
 *.pem
+.AppleDouble
+.LSOverride
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
 
 # generated native folders
-/ios
-/android
+/ios/
+/android/
+
+# testing
+coverage/
+__tests__/mocks/
 
 # secrets
 src/config/ApiConfig.ts
+
+# temp files
+*.tmp
+*.bak

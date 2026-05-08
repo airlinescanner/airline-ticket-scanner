@@ -60,15 +60,43 @@ export class TicketParser {
         airlineCode: airlineCode || (flightNumber ? flightNumber.substring(0, 2) : null),
         flightNumber,
         departureDate: departureDate ? this.convertToISO8601(departureDate) : null,
+        departureTime: null,
+        departureCity: null,
+        departureCountry: null,
         departureAirport,
         arrivalAirport,
+        arrivalCity: null,
+        arrivalCountry: null,
         seat,
         serviceClass,
+        bookingReference: null,
         rawJson: '',
       };
 
       ticketData.rawJson = this.prettyPrint(ticketData);
       results.push(ticketData);
+    }
+
+    if (results.length === 0) {
+      results.push({
+        passengerName: this.extractPassengerName(lines),
+        airlineName: null,
+        airlineCode: null,
+        flightNumber: null,
+        departureDate: null,
+        departureTime: null,
+        departureCity: null,
+        departureCountry: null,
+        departureAirport: null,
+        arrivalAirport: null,
+        arrivalCity: null,
+        arrivalCountry: null,
+        seat: null,
+        serviceClass: this.extractServiceClass(lines),
+        bookingReference: null,
+        rawJson: '',
+      });
+      results[0].rawJson = this.prettyPrint(results[0]);
     }
 
     return results;
@@ -140,6 +168,18 @@ export class TicketParser {
         }
       }
     }
+
+    // Fallback: search for something like IVANOV/IVAN
+    for (const line of lines) {
+      if (line.includes('/') && !line.includes('FLIGHT') && !line.includes('BOARDING') && !line.includes('GATE')) {
+        let cleanLine = line.replace(/PASSENGER:\s*/i, '').trim();
+        const parts = cleanLine.split('/');
+        if (parts.length >= 2 && parts[0].length > 1 && parts[1].length > 1) {
+          return cleanLine;
+        }
+      }
+    }
+
     return null;
   }
 
@@ -200,24 +240,33 @@ export class TicketParser {
       }
     }
 
-    // 3. Ищем аэропорт (тупо по всему блоку, потому что OCR может разбить колонки)
+    // 3. Ищем аэропорты (SVO-LED format or FROM ... TO ...)
     for (const line of lines) {
-      const airportMatch = line.match(/\b([A-Z]{3})\b/);
-      const forbidden = [...this.MONTHS, ...this.BLACKLIST_WORDS];
-      let code = (airportMatch && !forbidden.includes(airportMatch[1])) ? airportMatch[1] : null;
-      
-      if (!code) {
-        if (line.includes('WARSAW')) code = 'WAW';
-        if (line.includes('LYON')) code = 'LYS';
-        if (line.includes('KYIV')) code = 'KBP';
-      }
+        const routeMatch = line.match(/\b([A-Z]{3})\s*(?:[-/]|TO)\s*([A-Z]{3})\b/i);
+        if (routeMatch) {
+            departureAirport = routeMatch[1];
+            break;
+        }
+    }
 
-      if (code) {
-        // Чтобы не взять код прилета (Arrival), проверяем, что это не вторая часть блока
-        // Но для MVP сойдет первая найденная IATA
-        departureAirport = code;
-        break;
-      }
+    // 4. Ищем аэропорт (тупо по всему блоку, потому что OCR может разбить колонки)
+    if (!departureAirport) {
+        for (const line of lines) {
+          const airportMatch = line.match(/\b([A-Z]{3})\b/);
+          const forbidden = [...this.MONTHS, ...this.BLACKLIST_WORDS];
+          let code = (airportMatch && !forbidden.includes(airportMatch[1])) ? airportMatch[1] : null;
+          
+          if (!code) {
+            if (line.includes('WARSAW')) code = 'WAW';
+            if (line.includes('LYON')) code = 'LYS';
+            if (line.includes('KYIV')) code = 'KBP';
+          }
+    
+          if (code) {
+            departureAirport = code;
+            break;
+          }
+        }
     }
 
     return { departureDate, departureAirport };
@@ -226,6 +275,11 @@ export class TicketParser {
   private extractArrivalAirport(lines: string[]): string | null {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      
+      // Try SVO-LED or FROM ... TO ... format first
+      const routeMatch = line.match(/\b([A-Z]{3})\s*(?:[-/]|TO)\s*([A-Z]{3})\b/i);
+      if (routeMatch) return routeMatch[2];
+
       if (line.includes('ARRIVAL')) {
         let targetLine = line;
         if (i + 1 < lines.length) targetLine += " " + lines[i+1];
@@ -256,13 +310,15 @@ export class TicketParser {
   }
 
   private extractServiceClass(lines: string[]): string | null {
-    for (const line of lines) {
-      if (line.includes('CLASS')) {
-        if (line.includes('ECONOMY')) return 'Economy';
-        if (line.includes('BUSINESS')) return 'Business';
-        if (line.includes('FIRST')) return 'First';
-      }
-    }
+    const fullText = lines.join(' ');
+    if (fullText.includes('ECONOMY')) return 'Economy';
+    if (fullText.includes('BUSINESS')) return 'Business';
+    if (fullText.includes('FIRST')) return 'First';
+    
+    if (/CLASS[:\s]*Y/i.test(fullText)) return 'Economy';
+    if (/CLASS[:\s]*C/i.test(fullText)) return 'Business';
+    if (/CLASS[:\s]*F/i.test(fullText)) return 'First';
+    
     return null;
   }
 

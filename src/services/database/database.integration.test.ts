@@ -1,11 +1,6 @@
 /**
  * Интеграционный тест для проверки базы данных
  * Задача 6: Checkpoint — Проверка базы данных
- * 
- * Проверяет:
- * - Корректное создание таблиц
- * - Предзаполнение работает только при первом запуске
- * - Валидация кодов авиакомпаний
  */
 
 import { databaseService } from './DatabaseService';
@@ -38,6 +33,7 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       expect(tableNames).toContain('airlines');
       expect(tableNames).toContain('tickets');
       expect(tableNames).toContain('app_meta');
+      expect(tableNames).toContain('trips');
     });
 
     it('должен создать таблицу airlines с правильной структурой', async () => {
@@ -113,7 +109,6 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       // Проверяем, что данные добавлены
       const afterInit = await airlineRepository.findAll();
       expect(afterInit.length).toBe(seedAirlines.length);
-      expect(afterInit.length).toBe(20); // Ожидаем 20 авиакомпаний
     });
 
     it('должен работать только при первом запуске (идемпотентность)', async () => {
@@ -126,7 +121,7 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       const secondCount = (await airlineRepository.findAll()).length;
       
       expect(firstCount).toBe(secondCount);
-      expect(firstCount).toBe(20);
+      expect(firstCount).toBe(seedAirlines.length);
     });
 
     it('должен установить флаг is_seeded после инициализации', async () => {
@@ -141,13 +136,13 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       await airlineRepository.initialize(seedAirlines);
       
       // Проверяем наличие нескольких ключевых авиакомпаний
-      const aeroflot = await airlineRepository.findByCode('SU');
-      expect(aeroflot).not.toBeNull();
-      expect(aeroflot?.name).toBe('Aeroflot');
-      
       const lufthansa = await airlineRepository.findByCode('LH');
       expect(lufthansa).not.toBeNull();
       expect(lufthansa?.name).toBe('Lufthansa');
+      
+      const lot = await airlineRepository.findByCode('LO');
+      expect(lot).not.toBeNull();
+      expect(lot?.name).toBe('LOT Polish Airlines');
       
       const emirates = await airlineRepository.findByCode('EK');
       expect(emirates).not.toBeNull();
@@ -162,10 +157,10 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен принимать валидный IATA-код (2 символа)', async () => {
       const airline: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SU',
-        icaoCode: 'AFL',
-        name: 'Test Airline',
-        country: 'Russia',
+        iataCode: 'LH',
+        icaoCode: 'DLH',
+        name: 'Lufthansa',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -174,15 +169,15 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       };
 
       const created = await airlineRepository.create(airline);
-      expect(created.iataCode).toBe('SU');
+      expect(created.iataCode).toBe('LH');
     });
 
     it('должен принимать валидный ICAO-код (3 символа)', async () => {
       const airline: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SU',
-        icaoCode: 'AFL',
-        name: 'Test Airline',
-        country: 'Russia',
+        iataCode: 'LH',
+        icaoCode: 'DLH',
+        name: 'Lufthansa',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -191,15 +186,15 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       };
 
       const created = await airlineRepository.create(airline);
-      expect(created.icaoCode).toBe('AFL');
+      expect(created.icaoCode).toBe('DLH');
     });
 
     it('должен отклонять IATA-код неправильной длины', async () => {
       const airline1: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'S', // 1 символ
-        icaoCode: 'AFL',
+        iataCode: 'L', // 1 символ
+        icaoCode: 'DLH',
         name: 'Test Airline',
-        country: 'Russia',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -210,10 +205,10 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       await expect(airlineRepository.create(airline1)).rejects.toThrow('IATA code');
 
       const airline2: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SUU', // 3 символа
-        icaoCode: 'AFL',
+        iataCode: 'LHH', // 3 символа
+        icaoCode: 'DLH',
         name: 'Test Airline',
-        country: 'Russia',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -226,10 +221,10 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен отклонять ICAO-код неправильной длины', async () => {
       const airline1: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SU',
-        icaoCode: 'AF', // 2 символа
+        iataCode: 'LH',
+        icaoCode: 'DL', // 2 символа
         name: 'Test Airline',
-        country: 'Russia',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -240,10 +235,10 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       await expect(airlineRepository.create(airline1)).rejects.toThrow('ICAO code');
 
       const airline2: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SU',
-        icaoCode: 'AFLL', // 4 символа
+        iataCode: 'LH',
+        icaoCode: 'DLHH', // 4 символа
         name: 'Test Airline',
-        country: 'Russia',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -256,10 +251,10 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен автоматически приводить коды к верхнему регистру', async () => {
       const airline: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'su', // нижний регистр
-        icaoCode: 'afl', // нижний регистр
+        iataCode: 'lh', // нижний регистр
+        icaoCode: 'dlh', // нижний регистр
         name: 'Test Airline',
-        country: 'Russia',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -268,16 +263,16 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       };
 
       const created = await airlineRepository.create(airline);
-      expect(created.iataCode).toBe('SU');
-      expect(created.icaoCode).toBe('AFL');
+      expect(created.iataCode).toBe('LH');
+      expect(created.icaoCode).toBe('DLH');
     });
 
     it('должен отклонять дублирующиеся IATA-коды', async () => {
       const airline1: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SU',
-        icaoCode: 'AFL',
-        name: 'Aeroflot',
-        country: 'Russia',
+        iataCode: 'LH',
+        icaoCode: 'DLH',
+        name: 'Lufthansa',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -288,7 +283,7 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
       await airlineRepository.create(airline1);
 
       const airline2: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SU', // Дубликат
+        iataCode: 'LH', // Дубликат
         icaoCode: 'XXX',
         name: 'Another Airline',
         country: 'USA',
@@ -304,10 +299,10 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен отклонять дублирующиеся ICAO-коды', async () => {
       const airline1: Omit<Airline, 'id' | 'updatedAt'> = {
-        iataCode: 'SU',
-        icaoCode: 'AFL',
-        name: 'Aeroflot',
-        country: 'Russia',
+        iataCode: 'LH',
+        icaoCode: 'DLH',
+        name: 'Lufthansa',
+        country: 'Germany',
         logoUrl: null,
         registrationUrl: null,
         supportPhone: null,
@@ -319,7 +314,7 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
       const airline2: Omit<Airline, 'id' | 'updatedAt'> = {
         iataCode: 'XX',
-        icaoCode: 'AFL', // Дубликат
+        icaoCode: 'DLH', // Дубликат
         name: 'Another Airline',
         country: 'USA',
         logoUrl: null,
@@ -341,63 +336,93 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен сохранять билет с кодом существующей авиакомпании', async () => {
       // Проверяем, что авиакомпания существует
-      const airline = await airlineRepository.findByCode('SU');
+      const airline = await airlineRepository.findByCode('LH');
       expect(airline).not.toBeNull();
 
       // Сохраняем билет
       const ticket = await ticketRepository.save({
         passengerName: 'IVANOV/IVAN',
-        airlineCode: 'SU',
-        flightNumber: 'SU1234',
+        airlineCode: 'LH',
+        flightNumber: 'LH1234',
         departureDate: '2025-06-15T10:00:00Z',
-        departureAirport: 'SVO',
-        arrivalAirport: 'LED',
+        departureAirport: 'FRA',
+        arrivalAirport: 'MUC',
         seat: '14A',
         serviceClass: 'Economy',
         rawJson: '{}',
         notificationEnabled: false,
         notificationId: null,
+        airlineName: null,
+        operatingAirlineName: null,
+        operatingAirlineCode: null,
+        departureTime: null,
+        departureCity: null,
+        departureCountry: null,
+        arrivalCity: null,
+        arrivalCountry: null,
+        bookingReference: null,
+        tripId: null,
       });
 
       expect(ticket.id).toBeDefined();
-      expect(ticket.airlineCode).toBe('SU');
+      expect(ticket.airlineCode).toBe('LH');
     });
 
     it('должен находить билеты по коду авиакомпании через индекс', async () => {
       // Создаём несколько билетов
       await ticketRepository.save({
         passengerName: 'IVANOV/IVAN',
-        airlineCode: 'SU',
-        flightNumber: 'SU1234',
+        airlineCode: 'LH',
+        flightNumber: 'LH1234',
         departureDate: '2025-06-15T10:00:00Z',
-        departureAirport: 'SVO',
-        arrivalAirport: 'LED',
+        departureAirport: 'FRA',
+        arrivalAirport: 'MUC',
         seat: '14A',
         serviceClass: 'Economy',
         rawJson: '{}',
         notificationEnabled: false,
         notificationId: null,
+        airlineName: null,
+        operatingAirlineName: null,
+        operatingAirlineCode: null,
+        departureTime: null,
+        departureCity: null,
+        departureCountry: null,
+        arrivalCity: null,
+        arrivalCountry: null,
+        bookingReference: null,
+        tripId: null,
       });
 
       await ticketRepository.save({
         passengerName: 'PETROV/PETR',
-        airlineCode: 'LH',
-        flightNumber: 'LH5678',
+        airlineCode: 'EK',
+        flightNumber: 'EK5678',
         departureDate: '2025-07-20T14:00:00Z',
-        departureAirport: 'FRA',
-        arrivalAirport: 'MUC',
+        departureAirport: 'DXB',
+        arrivalAirport: 'LHR',
         seat: '22B',
         serviceClass: 'Business',
         rawJson: '{}',
         notificationEnabled: false,
         notificationId: null,
+        airlineName: null,
+        operatingAirlineName: null,
+        operatingAirlineCode: null,
+        departureTime: null,
+        departureCity: null,
+        departureCountry: null,
+        arrivalCity: null,
+        arrivalCountry: null,
+        bookingReference: null,
+        tripId: null,
       });
 
       // Проверяем, что индекс работает (запрос должен быть быстрым)
       const db = await databaseService.getDatabase();
       const tickets = await db.getAllAsync<any>(
         'SELECT * FROM tickets WHERE airline_code = ?',
-        ['SU']
+        ['LH']
       );
 
       expect(tickets).toHaveLength(1);
@@ -413,7 +438,7 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен быстро находить авиакомпанию по IATA-коду через индекс', async () => {
       const startTime = Date.now();
-      const airline = await airlineRepository.findByCode('SU');
+      const airline = await airlineRepository.findByCode('LH');
       const endTime = Date.now();
 
       expect(airline).not.toBeNull();
@@ -422,7 +447,7 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен быстро находить авиакомпанию по ICAO-коду через индекс', async () => {
       const startTime = Date.now();
-      const airline = await airlineRepository.findByCode('AFL');
+      const airline = await airlineRepository.findByCode('DLH');
       const endTime = Date.now();
 
       expect(airline).not.toBeNull();
@@ -431,7 +456,7 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
 
     it('должен быстро выполнять поиск по названию через индекс', async () => {
       const startTime = Date.now();
-      const results = await airlineRepository.search('Aeroflot');
+      const results = await airlineRepository.search('Lufthansa');
       const endTime = Date.now();
 
       expect(results.length).toBeGreaterThan(0);

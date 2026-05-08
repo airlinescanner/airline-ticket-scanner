@@ -58,7 +58,7 @@ export class BackupManager {
       // Сохранение даты последнего экспорта
       await this.saveLastBackupDate();
 
-      console.log('Backup exported successfully:', fileName);
+
     } catch (error) {
       console.error('Failed to export backup:', error);
       throw error;
@@ -79,7 +79,7 @@ export class BackupManager {
       });
 
       if (result.canceled) {
-        console.log('Import cancelled by user');
+
         return;
       }
 
@@ -114,7 +114,7 @@ export class BackupManager {
       // Атомарная замена данных
       await this.replaceAllData(backupData);
 
-      console.log('Backup imported successfully');
+
     } catch (error) {
       console.error('Failed to import backup:', error);
       throw error;
@@ -227,7 +227,7 @@ export class BackupManager {
       // Восстановление настроек
       await this.restoreSettings(backupData.settings);
 
-      console.log('All data replaced successfully');
+
     } catch (error) {
       console.error('BACKUP_WRITE_ERROR: Failed to replace data:', error);
       throw new Error('BACKUP_WRITE_ERROR: Failed to write data to database');

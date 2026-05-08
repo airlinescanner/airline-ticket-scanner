@@ -20,6 +20,7 @@ class DatabaseService {
     }
 
     this.db = await SQLite.openDatabaseAsync(this.DB_NAME);
+    await this.db.execAsync('PRAGMA foreign_keys = ON;'); // Включаем поддержку связей
     await this.initializeTables();
     return this.db;
   }
@@ -97,9 +98,12 @@ class DatabaseService {
         notification_id      TEXT,
         booking_reference    TEXT,
         trip_id              INTEGER,
-        FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE SET NULL
+        FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE CASCADE
       );
     `);
+
+    // Принудительная зачистка "призраков" (билетов без поездок) при каждом запуске
+    await this.db.execAsync('DELETE FROM tickets WHERE trip_id IS NULL OR trip_id NOT IN (SELECT id FROM trips)');
 
     // Migration for existing tables
     try {
@@ -127,6 +131,13 @@ class DatabaseService {
       await this.db.execAsync("ALTER TABLE tickets ADD COLUMN arrival_country TEXT;");
     } catch (e) {}
 
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN operating_airline_name TEXT;");
+    } catch (e) {}
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN operating_airline_code TEXT;");
+    } catch (e) {}
+    
     // Индексы для таблицы tickets
     await this.db.execAsync(`
       CREATE INDEX IF NOT EXISTS idx_tickets_scanned_at ON tickets(scanned_at DESC);

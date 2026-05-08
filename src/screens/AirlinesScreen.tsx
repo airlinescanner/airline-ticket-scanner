@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Input } from '../components/Input';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
+import { ScreenGradient } from '../components/ScreenGradient';
 import { airlineRepository } from '../services/database/AirlineRepository';
 import { Airline } from '../types/airline';
 import type { RootStackParamList } from '../navigation/types';
@@ -58,7 +59,7 @@ export const AirlinesScreen: React.FC = () => {
           <Text style={[styles.name, { color: tokens.colors.text.primary }]}>
             {item.name}
           </Text>
-          <Text style={[styles.codes, { color: tokens.colors.accent.primary }]}>
+          <Text style={[styles.codes, { color: tokens.colors.text.secondary }]}>
             {item.iataCode}
           </Text>
         </View>
@@ -81,14 +82,13 @@ export const AirlinesScreen: React.FC = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+    <ScreenGradient style={styles.container}>
       <View style={styles.searchContainer}>
         <Input
           placeholder={t('airline.search')}
           value={searchQuery}
           onChangeText={setSearchQuery}
           style={styles.searchInput}
-          leftIcon={<Ionicons name="search-outline" size={20} color={tokens.colors.text.secondary} />}
         />
       </View>
 
@@ -116,11 +116,11 @@ export const AirlinesScreen: React.FC = () => {
       {/* Кнопка добавления новой авиакомпании */}
       <TouchableOpacity 
         style={[styles.fab, { backgroundColor: tokens.colors.accent.primary }]}
-        onPress={() => navigation.navigate('AirlineDetail', { airlineId: undefined })}
+        onPress={() => navigation.navigate('AirlineDetail', { airlineId: undefined as any })}
       >
         <Ionicons name="add" size={30} color="#FFF" />
       </TouchableOpacity>
-    </View>
+    </ScreenGradient>
   );
 };
 
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
     paddingTop: 8,
-    paddingBottom: 100, // Место для кнопки FAB
+    paddingBottom: 180, // Достаточно места для FAB и плавающего меню
   },
   emptyContainer: {
     flex: 1,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 110, // Поднимаем над плавающим меню
     right: 30,
     width: 60,
     height: 60,

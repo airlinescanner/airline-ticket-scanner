@@ -6,8 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { saveLanguage } from '../i18n';
 import { Card } from '../components/Card';
-import { secretService } from '../services/SecretService';
 import { Input } from '../components/Input';
+import { ScreenGradient } from '../components/ScreenGradient';
+import { airlineUpdateService } from '../services/AirlineUpdateService';
 
 export const SettingsScreen: React.FC = () => {
   const { tokens, mode, setMode } = useTheme();
@@ -63,27 +64,50 @@ export const SettingsScreen: React.FC = () => {
     });
   };
 
-  const [customKey, setCustomKey] = React.useState('');
-  
-  React.useEffect(() => {
-    secretService.getApiKey().then(k => {
-      // Показываем только если это не системный ключ
-      if (k !== 'AIzaSyAS-iXsJLT9tq4hlYsNx06Q_PeQMnNZx9o') {
-        setCustomKey(k);
-      }
-    });
-  }, []);
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [syncProgress, setSyncProgress] = React.useState(0);
+  const [syncStatus, setSyncStatus] = React.useState('');
 
-  const saveCustomKey = async (key: string) => {
-    setCustomKey(key);
-    if (key.trim()) {
-      await secretService.setCustomApiKey(key.trim());
-    } else {
-      await secretService.resetApiKey();
+  const handleSyncAirlines = async () => {
+    setIsSyncing(true);
+    setSyncProgress(0);
+    setSyncStatus('Starting...');
+    
+    try {
+      const changes = await airlineUpdateService.performUpdate((progress, status) => {
+        setSyncProgress(progress);
+        setSyncStatus(status);
+      });
+      
+      if (changes.length > 0) {
+        const message = changes.map(c => 
+          `• ${c.airlineName}: ${c.oldHours}h → ${c.newHours}h`
+        ).join('\n');
+
+        showAlert({
+          title: t('settings.updateSuccessTitle'),
+          message: `${t('settings.updateSuccessMessage')}\n\n${message}`,
+          buttons: [{ text: t('common.ok') }]
+        });
+      } else {
+        showAlert({
+          title: t('settings.upToDateTitle'),
+          message: t('settings.upToDateMessage'),
+          buttons: [{ text: t('common.ok') }]
+        });
+      }
+    } catch (e) {
+      showAlert({
+        title: t('common.error'),
+        message: 'Failed to update airline database. Please check your connection.',
+        buttons: [{ text: t('common.ok') }]
+      });
+    } finally {
+      setIsSyncing(false);
+      setSyncProgress(0);
+      setSyncStatus('');
     }
   };
-
-
 
   const renderSettingItem = (
     label: string, 
@@ -115,12 +139,13 @@ export const SettingsScreen: React.FC = () => {
   );
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
-          {t('settings.title')}
-        </Text>
-      </View>
+    <ScreenGradient style={styles.wrapper}>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
+            {t('settings.title')}
+          </Text>
+        </View>
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
@@ -163,33 +188,67 @@ export const SettingsScreen: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
-          AI ENGINE (ADVANCED)
+          {t('settings.airlineDatabase')}
         </Text>
-        <Card style={[styles.card, { padding: 16 }]}>
-          <Text style={[styles.itemLabel, { color: tokens.colors.text.secondary, marginLeft: 0, marginBottom: 8, fontSize: 12 }]}>
-            Custom Gemini API Key
-          </Text>
-          <Input
-            value={customKey}
-            onChangeText={saveCustomKey}
-            placeholder="AIzaSy..."
-            secureTextEntry={true}
-            style={{ marginBottom: 0 }}
-          />
-          <Text style={{ fontSize: 10, color: tokens.colors.text.secondary, marginTop: 8 }}>
-            Якщо системний ключ перестане працювати, вставте сюди свій власний.
-          </Text>
+        <Card style={styles.card}>
+          <TouchableOpacity 
+            style={styles.item} 
+            onPress={handleSyncAirlines}
+            disabled={isSyncing}
+          >
+            <View style={styles.itemContent}>
+              <Ionicons 
+                name={isSyncing ? "sync-outline" : "cloud-download-outline"} 
+                size={22} 
+                color={tokens.colors.accent.primary} 
+              />
+              <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
+                {isSyncing ? t('settings.syncing') : t('settings.syncRules')}
+              </Text>
+            </View>
+            {!isSyncing && <Ionicons name="refresh" size={20} color={tokens.colors.accent.primary} />}
+          </TouchableOpacity>
         </Card>
+
+        {isSyncing && (
+          <View style={styles.progressContainer}>
+            <View style={[styles.progressBarBg, { backgroundColor: tokens.colors.background.card }]}>
+              <View 
+                style={[
+                  styles.progressBarFill, 
+                  { 
+                    backgroundColor: tokens.colors.accent.primary,
+                    width: `${syncProgress}%`
+                  }
+                ]} 
+              />
+            </View>
+            <View style={styles.progressInfo}>
+              <Text style={[styles.statusText, { color: tokens.colors.text.secondary }]}>
+                {syncStatus}
+              </Text>
+              <Text style={[styles.percentText, { color: tokens.colors.accent.primary }]}>
+                {syncProgress}%
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <Text style={{ fontSize: 10, color: tokens.colors.text.secondary, marginTop: 8, marginLeft: 4 }}>
+          {t('settings.updateHint')}
+        </Text>
       </View>
 
-      <Text style={[styles.version, { color: tokens.colors.text.secondary }]}>
-        Version 1.0.0
-      </Text>
-    </ScrollView>
+        <Text style={[styles.version, { color: tokens.colors.text.secondary }]}>
+          Version 1.0.0
+        </Text>
+      </ScrollView>
+    </ScreenGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: { flex: 1 },
   container: { flex: 1, padding: 16 },
   header: { marginTop: 40, marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 'bold' },
@@ -206,5 +265,34 @@ const styles = StyleSheet.create({
   itemContent: { flexDirection: 'row', alignItems: 'center' },
   itemLabel: { fontSize: 14, marginLeft: 12, fontWeight: '500' },
   separator: { height: 1, marginHorizontal: 12 },
-  version: { textAlign: 'center', marginTop: 20, marginBottom: 40, fontSize: 12 }
+  version: { textAlign: 'center', marginTop: 20, marginBottom: 40, fontSize: 12 },
+  progressContainer: {
+    marginTop: 16,
+    paddingHorizontal: 4,
+  },
+  progressBarBg: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  percentText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });

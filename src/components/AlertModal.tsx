@@ -44,7 +44,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
   buttons = [],
   onClose,
 }) => {
-  const { tokens, theme } = useTheme();
+  const { tokens } = useTheme();
   const [slideAnim] = React.useState(new Animated.Value(Dimensions.get('window').height));
   const [opacityAnim] = React.useState(new Animated.Value(0));
 
@@ -122,7 +122,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
             }
           ]}
         >
-          <View style={[styles.handle, { backgroundColor: tokens.colors.border }]} />
+          <View style={[styles.handle, { backgroundColor: tokens.colors.border.default }]} />
           
           <View style={styles.content}>
             <View style={[styles.iconContainer, { backgroundColor: icon.color + '15' }]}>
@@ -149,7 +149,7 @@ export const AlertModal: React.FC<AlertModalProps> = ({
                       style={[
                         styles.button,
                         index > 0 && styles.buttonMargin,
-                        isCancel && { backgroundColor: tokens.colors.background.buttonSecondary },
+                        isCancel && { backgroundColor: tokens.colors.background.card },
                         !isCancel && !isDestructive && { backgroundColor: tokens.colors.accent.primary },
                         isDestructive && { backgroundColor: '#FF3B30' }
                       ]}

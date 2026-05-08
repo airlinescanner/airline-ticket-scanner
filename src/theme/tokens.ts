@@ -6,8 +6,8 @@ import type { ThemeTokens } from '../types/theme';
 // Тёмная тема
 const darkTokens = {
   colors: {
-    background: { app: '#1A1F2E', card: '#242B3D' },
-    accent: { primary: '#00C853' },
+    background: { app: '#143B57', card: '#274966' },
+    accent: { primary: '#2979FF' },
     text: { primary: '#FFFFFF', secondary: '#8A9BB5', tertiary: '#5C6A80' },
     button: {
       primary: { background: '#2979FF', text: '#FFFFFF' },
@@ -29,8 +29,8 @@ const darkTokens = {
 // Светлая тема
 const lightTokens = {
   colors: {
-    background: { app: '#E8F4FD', card: '#FFFFFF' },
-    accent: { primary: '#F5A623' },
+    background: { app: '#CCE0F2', card: '#E8F1FA' },
+    accent: { primary: '#2979FF' },
     text: { primary: '#2C3E50', secondary: '#7F8C8D', tertiary: '#BDC3C7' },
     button: {
       primary: { background: '#2979FF', text: '#FFFFFF' },

@@ -1,5 +1,13 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
+/**
+ * Экран сканирования билетов
+ * 
+ * Отображает камеру для захвата изображения билета
+ * Интегрирует OCR для распознавания текста
+ * Обрабатывает ошибки и показывает инструкции
+ */
+
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,7 +16,6 @@ import { useTranslation } from 'react-i18next';
 import { ViewfinderOverlay } from '../components/ViewfinderOverlay';
 import { PillButton } from '../components/PillButton';
 import { Card } from '../components/Card';
-import { geminiService } from '../services/GeminiService';
 import type { RootStackParamList } from '../navigation/types';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -18,130 +25,156 @@ export const ScannerScreen: React.FC = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const cameraRef = useRef<Camera>(null);
-  const isLocked = useRef(false);
   
   const device = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Анимация вспышки
-  const flashOpacity = useRef(new Animated.Value(0)).current;
 
-  const triggerFlash = () => {
-    flashOpacity.setValue(1); // Резкая белая вспышка
-    Animated.timing(flashOpacity, {
-      toValue: 0,
-      duration: 600, // Плавное затухание за полсекунды
-      useNativeDriver: true,
-    }).start();
-  };
+  // Обработка захвата изображения
+  const handleCapture = async () => {
+    if (!cameraRef.current || isProcessing) return;
 
-  const processTicket = useCallback(async (path: string) => {
     try {
-      const ticketDataArray = await geminiService.analyzeTicket(path);
-      
-      if (ticketDataArray && ticketDataArray.length > 0) {
-        navigation.navigate('ScanResult', { ticketDataList: ticketDataArray });
-        return true;
-      } else {
-        setError("Не удалось найти данные билета на фото. Попробуйте еще раз.");
-        return false;
-      }
-    } catch (err: any) {
-      console.error('AI Processing Error:', err);
-      setError("Ошибка соединения с ИИ. Попробуйте позже.");
-      return false;
-    }
-  }, [navigation]);
-
-  const handleCapture = useCallback(async () => {
-    if (!cameraRef.current || isLocked.current) return;
-    
-    try {
-      isLocked.current = true;
+      setIsProcessing(true);
       setError(null);
-      
-      // 1. Автоматическая фокусировка перед снимком
-      await cameraRef.current.focus({ x: 0.5, y: 0.5 });
-      await new Promise(resolve => setTimeout(resolve, 800)); // Даем время линзе сфокусироваться
 
-      // 2. Делаем качественный снимок
-      const photo = await cameraRef.current.takePhoto({ 
-        flash: 'auto',
-        enableShutterSound: true,
+      // Захват фото
+      const photo = await cameraRef.current.takePhoto({
         qualityPrioritization: 'quality',
+        enableAutoStabilization: true,
       });
 
-      // 3. Эффект вспышки на экране (показывает, что фото сделано!)
-      triggerFlash();
-
-      // 4. Включаем экран загрузки
-      setIsProcessing(true);
-
-      // 5. Отправляем в ИИ
-      await processTicket(photo.path);
+      // TODO: Интеграция OCR и парсинга
+      // const ocrResult = await ocrService.recognizeText(`file://${photo.path}`);
+      // const ticketData = ticketParser.parse(ocrResult.rawText);
       
-    } catch (err) {
-      console.error('Capture error:', err);
-      setError("Ошибка камеры.");
+      // Временно: переход с пустыми данными
+      navigation.navigate('ScanResult', { 
+        ticketData: {
+          passengerName: null,
+          airlineCode: null,
+          flightNumber: null,
+          departureDate: null,
+          departureAirport: null,
+          arrivalAirport: null,
+          seat: null,
+          serviceClass: null,
+          rawJson: '',
+        }
+      });
+    } catch (err: any) {
+      console.error('Scan error:', err);
+      setError(t('common.error'));
     } finally {
       setIsProcessing(false);
-      isLocked.current = false;
     }
-  }, [processTicket]);
+  };
 
-  if (device == null) return null;
+  // Обработка отказа в разрешении
+  const handlePermissionDenied = () => {
+    Alert.alert(
+      t('scanner.permissionDenied'),
+      t('scanner.permissionInstructions'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('settings.title'), onPress: () => Linking.openSettings() },
+      ]
+    );
+  };
+
+  // Загрузка
+  if (device == null) {
+    return (
+      <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+        <Text style={[styles.text, { color: tokens.colors.text.primary }]}>
+          {t('common.loading')}
+        </Text>
+      </View>
+    );
+  }
+
+  // Нет разрешения
+  if (!hasPermission) {
+    return (
+      <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+        <Card style={styles.permissionCard}>
+          <Text style={[styles.permissionTitle, { color: tokens.colors.text.primary }]}>
+            {t('scanner.permissionDenied')}
+          </Text>
+          <Text style={[styles.permissionText, { color: tokens.colors.text.secondary }]}>
+            {t('scanner.permissionInstructions')}
+          </Text>
+          <PillButton
+            title={t('common.ok')}
+            onPress={requestPermission}
+            variant="primary"
+            style={styles.permissionButton}
+          />
+          <PillButton
+            title={t('settings.title')}
+            onPress={handlePermissionDenied}
+            variant="secondary"
+          />
+        </Card>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
+      {/* Камера */}
       <Camera
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         device={device}
-        isActive={true}
+        isActive={!isProcessing}
         photo={true}
-        enableZoomGesture={true}
-      />
-      
-      {/* Показываем рамку только если не обрабатываем фото */}
-      {!isProcessing && <ViewfinderOverlay />}
-
-      {/* Анимация Вспышки */}
-      <Animated.View 
-        style={[
-          StyleSheet.absoluteFill, 
-          { backgroundColor: 'white', opacity: flashOpacity, zIndex: 9 }
-        ]} 
-        pointerEvents="none"
       />
 
-      {/* Экран загрузки во время работы ИИ */}
-      {isProcessing && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={tokens?.colors?.accent?.primary || '#00C853'} />
-          <Text style={styles.loadingText}>Фото сделано!</Text>
-          <Text style={styles.loadingSubText}>ИИ распознает данные рейсов...</Text>
-        </View>
-      )}
+      {/* Оверлей с рамкой */}
+      <ViewfinderOverlay />
 
+      {/* Кнопка захвата */}
       <View style={styles.controls}>
         {error && (
           <Card style={styles.errorCard}>
-            <Text style={{ color: tokens?.colors?.text?.primary || '#000', textAlign: 'center', marginBottom: 10 }}>{error}</Text>
-            <PillButton title="Попробовать снова" onPress={() => setError(null)} variant="secondary" />
+            <Text style={[styles.errorText, { color: tokens.colors.text.primary }]}>
+              {error}
+            </Text>
+            <PillButton
+              title={t('common.retry')}
+              onPress={() => setError(null)}
+              variant="secondary"
+              style={styles.retryButton}
+            />
           </Card>
         )}
-        
-        {!isProcessing && !error && (
-          <TouchableOpacity
-            style={[styles.captureButton, { backgroundColor: tokens?.colors?.button?.primary?.background || '#2979FF' }]}
-            onPress={handleCapture}
-            disabled={isProcessing}
-          >
-            <View style={[styles.captureButtonInner, { backgroundColor: tokens?.colors?.background?.card || '#FFF' }]} />
-          </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.captureButton,
+            { 
+              backgroundColor: tokens.colors.button.primary.background,
+              opacity: isProcessing ? 0.5 : 1,
+            },
+          ]}
+          onPress={handleCapture}
+          disabled={isProcessing}
+        >
+          <View
+            style={[
+              styles.captureButtonInner,
+              { backgroundColor: tokens.colors.background.card },
+            ]}
+          />
+        </TouchableOpacity>
+
+        {isProcessing && (
+          <Text style={[styles.processingText, { color: tokens.colors.text.primary }]}>
+            {t('common.loading')}
+          </Text>
         )}
       </View>
     </View>
@@ -149,29 +182,75 @@ export const ScannerScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.85)',
+  container: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
-  loadingText: {
-    color: '#FFF',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 8,
+  text: {
+    fontSize: 18,
   },
-  loadingSubText: {
-    color: '#AAA',
-    fontSize: 16,
+  permissionCard: {
+    margin: 16,
+    padding: 24,
+  },
+  permissionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 12,
     textAlign: 'center',
-    paddingHorizontal: 40,
   },
-  errorCard: { marginBottom: 30, padding: 20, width: '85%' },
-  controls: { position: 'absolute', bottom: 60, left: 0, right: 0, alignItems: 'center', zIndex: 11 },
-  captureButton: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center' },
-  captureButtonInner: { width: 60, height: 60, borderRadius: 30 },
+  permissionText: {
+    fontSize: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  permissionButton: {
+    marginBottom: 12,
+  },
+  controls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: 48,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  errorCard: {
+    marginBottom: 16,
+    padding: 16,
+    width: '100%',
+  },
+  errorText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  retryButton: {
+    marginTop: 8,
+  },
+  captureButton: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  captureButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+  },
+  processingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
+  },
 });

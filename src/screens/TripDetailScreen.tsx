@@ -9,6 +9,7 @@ import { tripRepository } from '../services/database/TripRepository';
 import { registrationMatcher } from '../services/RegistrationMatcher';
 import { Ticket, Trip } from '../types/ticket';
 import { Card } from '../components/Card';
+import { ScreenGradient } from '../components/ScreenGradient';
 import { formatDateToDisplay } from '../utils/dateUtils';
 import { openUrl } from '../utils/linkingUtils';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -31,12 +32,27 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       setIsLoading(true);
       const currentTrip = await tripRepository.findById(tripId);
       
-      if (currentTrip) {
-        setTrip(currentTrip);
+      if (currentTrip && currentTrip.tickets) {
+        // Сортируем билеты: 
+        // 1. Группируем по "поездкам" (разрыв более 3 дней считается новой поездкой)
+        // 2. Самые новые поездки — вверх
+        // 3. Внутри поездки — по порядку вылета
+        const sortedTickets = [...currentTrip.tickets].sort((a, b) => {
+          const dateA = new Date(a.departureDate).getTime();
+          const dateB = new Date(b.departureDate).getTime();
+          // Сначала по году/месяцу (убывание), чтобы 2026 был выше 2024
+          if (a.departureDate.substring(0, 7) !== b.departureDate.substring(0, 7)) {
+            return dateB - dateA;
+          }
+          // Если месяц один - по возрастанию дня (чтобы 9-е было выше 10-го)
+          return dateA - dateB;
+        });
+
+        setTrip({ ...currentTrip, tickets: sortedTickets });
         
         // Получаем информацию о регистрации для каждого билета
         const infos: Record<number, any> = {};
-        for (const ticket of currentTrip.tickets || []) {
+        for (const ticket of sortedTickets) {
           const info = await registrationMatcher.match(ticket);
           infos[ticket.id] = info;
         }
@@ -76,14 +92,16 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (isLoading || !trip) {
     return (
-      <View style={[styles.container, { backgroundColor: tokens.colors.background.app, justifyContent: 'center' }]}>
+      <ScreenGradient style={styles.container}>
+        <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={tokens.colors.accent.primary} />
-      </View>
+        </View>
+      </ScreenGradient>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+    <ScreenGradient style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -94,7 +112,7 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             {trip.passengerName}
           </Text>
           {trip.pnr && (
-            <Text style={[styles.headerSubtitle, { color: tokens.colors.text.secondary }]}>
+            <Text style={[styles.headerSubtitle, { color: tokens.colors.status.success }]}>
               Booking: {trip.pnr}
             </Text>
           )}
@@ -116,7 +134,7 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 {/* Вертикальная линия */}
                 <View style={styles.lineColumn}>
                   <View style={[styles.dot, { backgroundColor: tokens.colors.accent.primary }]} />
-                  {!isLast && <View style={[styles.line, { backgroundColor: tokens.colors.border }]} />}
+                  {!isLast && <View style={[styles.line, { backgroundColor: tokens.colors.border.default }]} />}
                 </View>
 
                 {/* Карточка сегмента */}
@@ -126,9 +144,16 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                       onPress={() => navigation.navigate('TicketDetail', { ticketId: ticket.id })}
                     >
                       <View style={styles.flightHeader}>
-                        <Text style={[styles.flightNumber, { color: tokens.colors.text.primary }]}>
-                          {ticket.airlineCode} {ticket.flightNumber}
-                        </Text>
+                        <View>
+                          <Text style={[styles.flightNumber, { color: tokens.colors.text.primary }]}>
+                            {ticket.airlineCode} {ticket.flightNumber}
+                          </Text>
+                          {ticket.operatingAirlineName && (
+                            <Text style={[styles.operatedBy, { color: tokens.colors.accent.primary }]}>
+                              Operated by {ticket.operatingAirlineName}
+                            </Text>
+                          )}
+                        </View>
                         <Text style={[styles.flightDate, { color: tokens.colors.text.secondary }]}>
                           {formatDateToDisplay(ticket.departureDate)}
                         </Text>
@@ -137,13 +162,11 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                       <View style={styles.routeBox}>
                         <View style={styles.airportBox}>
                           <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>
+                            {ticket.departureCity || ticket.departureAirport}
+                          </Text>
+                          <Text style={[styles.locationText, { color: tokens.colors.text.secondary }]}>
                             {ticket.departureAirport}
                           </Text>
-                          {(ticket.departureCity || ticket.departureCountry) && (
-                            <Text style={[styles.locationText, { color: tokens.colors.text.secondary }]}>
-                              {ticket.departureCity}{ticket.departureCountry ? `, ${ticket.departureCountry}` : ''}
-                            </Text>
-                          )}
                           <Text style={[styles.airportTime, { color: tokens.colors.text.primary }]}>
                             {ticket.departureTime}
                           </Text>
@@ -153,20 +176,13 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                         
                         <View style={[styles.airportBox, { alignItems: 'flex-end' }]}>
                           <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>
+                            {(ticket.arrivalCity || 
+                              trip.tickets?.find(t => t.departureAirport === ticket.arrivalAirport && t.departureCity)?.departureCity) || 
+                              ticket.arrivalAirport}
+                          </Text>
+                          <Text style={[styles.locationText, { color: tokens.colors.text.secondary, textAlign: 'right' }]}>
                             {ticket.arrivalAirport}
                           </Text>
-                          {(() => {
-                            // Умный поиск названия города, если оно не сохранено в текущем билете
-                            const cityName = ticket.arrivalCity || 
-                              trip.tickets?.find(t => t.departureAirport === ticket.arrivalAirport && t.departureCity)?.departureCity ||
-                              ticket.arrivalCountry;
-                            
-                            return cityName ? (
-                              <Text style={[styles.locationText, { color: tokens.colors.text.secondary, textAlign: 'right' }]}>
-                                {cityName}
-                              </Text>
-                            ) : null;
-                          })()}
                           <Text style={[styles.airportTime, { color: tokens.colors.text.secondary }]}>
                              — 
                           </Text>
@@ -174,7 +190,7 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                       </View>
 
                       {regInfo && (
-                        <View style={[styles.regBox, { borderTopColor: tokens.colors.border }]}>
+                        <View style={[styles.regBox, { borderTopColor: tokens.colors.border.default }]}>
                           <View style={styles.regInfo}>
                             <Text style={[styles.regLabel, { color: tokens.colors.text.secondary }]}>
                               {t('registration.opens')}
@@ -205,12 +221,13 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           })}
         </View>
       </ScrollView>
-    </View>
+    </ScreenGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -232,10 +249,11 @@ const styles = StyleSheet.create({
   flightCard: { padding: 16, borderRadius: 20 },
   flightHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   flightNumber: { fontSize: 15, fontWeight: '700' },
+  operatedBy: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 2 },
   flightDate: { fontSize: 13 },
   routeBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   airportBox: { flex: 1 },
-  airportCode: { fontSize: 24, fontWeight: '800' },
+  airportCode: { fontSize: 18, fontWeight: '800' },
   locationText: { fontSize: 10, fontWeight: '500', marginTop: -2, marginBottom: 4 },
   airportTime: { fontSize: 14, fontWeight: '600', marginTop: 2 },
   routeIcon: { marginHorizontal: 10 },

@@ -15,6 +15,8 @@ export interface TicketData {
   seat: string | null;
   serviceClass: string | null;
   bookingReference: string | null;
+  operatingAirlineName?: string | null; // Авиакомпания, которая выполняет рейс (если отличается)
+  operatingAirlineCode?: string | null; // Код оперирующей авиакомпании
   rawJson: string;                  
 }
 
@@ -23,10 +25,12 @@ export interface Ticket {
   passengerName: string;
   airlineName: string | null;
   airlineCode: string;
+  operatingAirlineName: string | null;
+  operatingAirlineCode: string | null;
   flightNumber: string;
   departureDate: string;      // ISO 8601 (YYYY-MM-DD)
-  departureTime: string;      // HH:mm
-  departureCity: string;
+  departureTime: string | null;      // HH:mm (nullable)
+  departureCity: string | null;
   departureCountry: string | null;
   departureAirport: string;
   arrivalAirport: string;

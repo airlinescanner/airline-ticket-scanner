@@ -380,7 +380,7 @@ export class AirlineRepository {
     const db = await databaseService.getDatabase();
     const updatedAt = new Date().toISOString();
 
-    console.log('Surgical update started for', seedData.length, 'airlines');
+
 
     for (const airline of seedData) {
       if (airline.registrationUrl) {

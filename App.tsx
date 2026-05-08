@@ -14,9 +14,44 @@ import { View, Text, StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import i18n from './src/i18n'; // Инициализация i18next
-import { I18nextProvider } from 'react-i18next';
+import { I18nextProvider, useTranslation } from 'react-i18next';
 import { initializeDatabase } from './src/services/database';
-import { AlertProvider } from './src/theme/AlertContext';
+import { AlertProvider, useAlert } from './src/theme/AlertContext';
+import { airlineUpdateService } from './src/services/AirlineUpdateService';
+
+/**
+ * RootUpdater - фоновый компонент для автоматических задач (раз в неделю)
+ */
+function RootUpdater() {
+  const { showAlert } = useAlert();
+  const { t } = useTranslation();
+
+  React.useEffect(() => {
+    // Запускаем через 2 секунды после старта, чтобы не мешать загрузке
+    const timer = setTimeout(async () => {
+      try {
+        const changes = await airlineUpdateService.checkAutoUpdate();
+        if (changes && changes.length > 0) {
+          const message = changes.map(c => 
+            `• ${c.airlineName}: ${c.oldHours}h → ${c.newHours}h`
+          ).join('\n');
+
+          showAlert({
+            title: t('settings.updateSuccessTitle'),
+            message: `${t('settings.updateSuccessMessage')}\n\n${message}`,
+            buttons: [{ text: t('common.ok') }]
+          });
+        }
+      } catch (e) {
+        console.error('[RootUpdater] Auto-update failed:', e);
+      }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return null;
+}
 
 
 /**
@@ -61,6 +96,7 @@ export default function App() {
     <I18nextProvider i18n={i18n}>
       <ThemeProvider>
         <AlertProvider>
+          <RootUpdater />
           {!isDbReady ? (
             <LoadingScreen />
           ) : (

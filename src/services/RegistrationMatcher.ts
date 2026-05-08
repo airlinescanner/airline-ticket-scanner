@@ -28,8 +28,14 @@ export class RegistrationMatcher {
       return null;
     }
 
-    // Поиск авиакомпании по коду
-    const airline = await airlineRepository.findByCode(ticket.airlineCode);
+    // Extract date part if it's a full ISO string
+    const departureDate = ticket.departureDate.includes('T') 
+      ? ticket.departureDate.split('T')[0] 
+      : ticket.departureDate;
+
+    // Поиск авиакомпании по коду (приоритет оперирующей компании)
+    const targetCode = ticket.operatingAirlineCode || ticket.airlineCode;
+    const airline = await airlineRepository.findByCode(targetCode);
     if (!airline) return null;
 
     // 1. Определяем часовой пояс аэропорта вылета
@@ -40,7 +46,7 @@ export class RegistrationMatcher {
 
     // 2. Рассчитываем момент открытия в UTC
     const openingUTC = timezoneService.getCheckInOpeningUTC(
-      ticket.departureDate,
+      departureDate,
       ticket.departureTime,
       timezone,
       airline.checkInHoursBefore
@@ -99,6 +105,38 @@ export class RegistrationMatcher {
         count: minutes
       });
     }
+  }
+
+  /**
+   * Вычислить дату регистрации (helper для тестов)
+   */
+  public computeRegistrationDate(departureDate: Date | string, hoursBefore: number): Date {
+    const tz = 'UTC';
+    let depDateStr = '';
+    let depTimeStr = '00:00';
+    
+    if (typeof departureDate === 'string') {
+        const dt = new Date(departureDate);
+        depDateStr = dt.toISOString().split('T')[0];
+        depTimeStr = dt.toISOString().split('T')[1].substring(0, 5);
+    } else {
+        depDateStr = departureDate.toISOString().split('T')[0];
+        depTimeStr = departureDate.toISOString().split('T')[1].substring(0, 5);
+    }
+
+    return timezoneService.getCheckInOpeningUTC(
+      depDateStr,
+      depTimeStr,
+      tz,
+      hoursBefore
+    ).toJSDate();
+  }
+
+  /**
+   * Отформатировать дату (helper для тестов)
+   */
+  public formatDate(date: Date): string {
+    return DateTime.fromJSDate(date).toFormat('dd.MM.yyyy HH:mm');
   }
 }
 

@@ -15,11 +15,11 @@ describe('DatabaseService', () => {
     
     // Проверяем наличие таблиц
     const tables = await db.getAllAsync<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('airlines', 'tickets', 'app_meta')"
+      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('airlines', 'tickets', 'app_meta', 'trips')"
     );
     
-    expect(tables).toHaveLength(3);
-    expect(tables.map(t => t.name).sort()).toEqual(['airlines', 'app_meta', 'tickets']);
+    expect(tables).toHaveLength(4);
+    expect(tables.map(t => t.name).sort()).toEqual(['airlines', 'app_meta', 'tickets', 'trips']);
   });
 
   it('должен создать индексы для оптимизации', async () => {

@@ -5,12 +5,12 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import { StyleSheet, FlatList } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../components/EmptyState';
+import { ScreenGradient } from '../components/ScreenGradient';
 import type { RootStackParamList } from '../navigation/types';
 import { tripRepository } from '../services/database/TripRepository';
 import { Trip } from '../types/ticket';
@@ -19,7 +19,6 @@ import { TripCard } from '../components/TripCard';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const HistoryScreen: React.FC = () => {
-  const { tokens } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   
@@ -52,7 +51,7 @@ export const HistoryScreen: React.FC = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+    <ScreenGradient style={styles.container}>
       <FlatList
         data={trips}
         keyExtractor={(item) => item.id.toString()}
@@ -68,7 +67,7 @@ export const HistoryScreen: React.FC = () => {
           ) : null
         }
       />
-    </View>
+    </ScreenGradient>
   );
 };
 
@@ -78,6 +77,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
+    paddingBottom: 100, // Добавляем отступ для плавающего меню
   },
   emptyContainer: {
     flex: 1,

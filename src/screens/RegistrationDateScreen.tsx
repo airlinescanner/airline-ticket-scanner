@@ -5,8 +5,9 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { ScreenGradient } from '../components/ScreenGradient';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -17,14 +18,14 @@ export const RegistrationDateScreen: React.FC<Props> = ({ route }) => {
   const { ticketId } = route.params;
 
   return (
-    <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+    <ScreenGradient style={styles.container}>
       <Text style={[styles.text, { color: tokens.colors.text.primary }]}>
         Registration Date Screen (TODO)
       </Text>
       <Text style={[styles.text, { color: tokens.colors.text.secondary }]}>
         Ticket ID: {ticketId}
       </Text>
-    </View>
+    </ScreenGradient>
   );
 };
 

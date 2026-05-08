@@ -10,13 +10,14 @@ import type { RootStackParamList } from '../navigation/types';
 import { Input } from '../components/Input';
 import { PillButton } from '../components/PillButton';
 import { Card } from '../components/Card';
+import { ScreenGradient } from '../components/ScreenGradient';
 import { airlineRepository } from '../services/database/AirlineRepository';
 import { Airline } from '../types/airline';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AirlineDetail'>;
 
 export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { tokens, theme } = useTheme();
+  const { tokens } = useTheme();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { showAlert } = useAlert();
@@ -136,9 +137,11 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: tokens.colors.background.app, justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color={tokens.colors.accent.primary} />
-      </View>
+      <ScreenGradient style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={tokens.colors.accent.primary} />
+        </View>
+      </ScreenGradient>
     );
   }
 
@@ -193,7 +196,7 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+    <ScreenGradient style={styles.container}>
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 25 }]}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -303,7 +306,7 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                 <PillButton 
                   title={t('airline.deleteAirline')} 
                   onPress={handleDelete}
-                  style={[styles.actionButton, styles.deleteButton, { marginTop: 40 }]}
+                  style={{ ...styles.actionButton, ...styles.deleteButton, marginTop: 40 }}
                 />
               )}
             </View>
@@ -329,20 +332,24 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                   title={t('airline.openWebsite') || 'Go to Registration'} 
                   onPress={() => openUrl(formData.registrationUrl!)}
                   style={{ marginTop: 24 }}
-                  icon="open-outline"
                 />
               )}
             </Card>
           </View>
         )}
       </ScrollView>
-    </View>
+    </ScreenGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     paddingHorizontal: 20,

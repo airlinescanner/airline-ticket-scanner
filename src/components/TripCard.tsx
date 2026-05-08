@@ -19,26 +19,34 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onPress }) => {
   const { tokens } = useTheme();
   const { t } = useTranslation();
 
-  const tickets = trip.tickets || [];
+  const tickets = [...(trip.tickets || [])].sort((a, b) => {
+    const dateA = a.departureDate + (a.departureTime || '00:00');
+    const dateB = b.departureDate + (b.departureTime || '00:00');
+    return dateA.localeCompare(dateB);
+  });
+
   if (tickets.length === 0) return null;
 
-  // Формируем цепочку городов с названиями
+  // Формируем цепочку городов гарантированно и последовательно
   const routeNodes: { code: string; city: string | null }[] = [];
-  if (tickets.length > 0) {
-    routeNodes.push({ 
-      code: tickets[0].departureAirport, 
-      city: tickets[0].departureCity 
-    });
+  
+  tickets.forEach(t => {
+    // Добавляем вылет, если его еще нет в списке (или если это первый элемент)
+    if (routeNodes.length === 0 || routeNodes[routeNodes.length - 1].code !== t.departureAirport) {
+      routeNodes.push({
+        code: t.departureAirport,
+        city: t.departureCity
+      });
+    }
     
-    tickets.forEach(t => {
-      if (routeNodes[routeNodes.length - 1].code !== t.arrivalAirport) {
-        routeNodes.push({ 
-          code: t.arrivalAirport, 
-          city: t.arrivalCity 
-        });
-      }
-    });
-  }
+    // Добавляем прилет, если он отличается от последнего добавленного
+    if (routeNodes[routeNodes.length - 1].code !== t.arrivalAirport) {
+      routeNodes.push({ 
+        code: t.arrivalAirport, 
+        city: t.arrivalCity 
+      });
+    }
+  });
 
   const startDate = formatDateToDisplay(tickets[0].departureDate);
   const flightCount = tickets.length;
@@ -53,8 +61,8 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onPress }) => {
               {trip.passengerName}
             </Text>
           </View>
-          <View style={[styles.badge, { backgroundColor: tokens.colors.accent.primary + '15' }]}>
-            <Text style={[styles.badgeText, { color: tokens.colors.accent.primary }]}>
+          <View style={[styles.badge, { backgroundColor: tokens.colors.text.secondary + '15' }]}>
+            <Text style={[styles.badgeText, { color: tokens.colors.text.secondary }]}>
               {flightCount} {t('ticket.flights', 'рейсів')}
             </Text>
           </View>
@@ -63,22 +71,26 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onPress }) => {
         <View style={styles.routeContainer}>
           {routeNodes.map((node, index) => (
             <React.Fragment key={index}>
-              <View style={styles.cityBox}>
-                <Text style={[styles.cityCode, { color: tokens.colors.text.primary }]}>{node.code}</Text>
-                {node.city && (
-                  <Text style={[styles.cityText, { color: tokens.colors.text.secondary }]}>
-                    {node.city}
+              <View style={styles.routeRow}>
+                <View style={styles.iconColumn}>
+                  <View style={[styles.dot, { backgroundColor: tokens.colors.accent.primary }]} />
+                  {index < routeNodes.length - 1 && (
+                    <View style={[styles.verticalLine, { backgroundColor: tokens.colors.text.secondary + '30' }]}>
+                      <Ionicons name="airplane" size={10} color={tokens.colors.text.secondary} style={styles.planeIcon} />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.cityBox}>
+                  <Text style={[styles.cityCode, { color: tokens.colors.text.primary }]}>
+                    {node.city || node.code}
                   </Text>
-                )}
+                  {node.city && (
+                    <Text style={[styles.cityText, { color: tokens.colors.text.secondary }]}>
+                      {node.code}
+                    </Text>
+                  )}
+                </View>
               </View>
-              {index < routeNodes.length - 1 && (
-                <Ionicons 
-                  name="chevron-forward" 
-                  size={16} 
-                  color={tokens.colors.text.secondary} 
-                  style={styles.arrow}
-                />
-              )}
             </React.Fragment>
           ))}
         </View>
@@ -88,10 +100,20 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onPress }) => {
             <Ionicons name="calendar-outline" size={14} color={tokens.colors.text.secondary} />
             <Text style={[styles.infoText, { color: tokens.colors.text.secondary }]}>{startDate}</Text>
           </View>
+          
+          {/* Показываем партнера, если он есть в первом билете */}
+          {tickets[0]?.operatingAirlineName && (
+            <View style={styles.infoItem}>
+              <Text style={[styles.operatedByText, { color: tokens.colors.accent.primary }]}>
+                {tickets[0].operatingAirlineName}
+              </Text>
+            </View>
+          )}
+
           {trip.pnr && (
             <View style={styles.infoItem}>
-              <Ionicons name="bookmark-outline" size={14} color={tokens.colors.text.secondary} />
-              <Text style={[styles.infoText, { color: tokens.colors.text.secondary }]}>{trip.pnr}</Text>
+              <Ionicons name="bookmark-outline" size={14} color={tokens.colors.status.success} />
+              <Text style={[styles.infoText, { color: tokens.colors.status.success }]}>{trip.pnr}</Text>
             </View>
           )}
         </View>
@@ -102,60 +124,81 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: 12,
+    padding: 12,
     borderRadius: 20,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   passengerBox: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   passengerName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     marginLeft: 8,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 10,
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   routeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 16,
-    paddingVertical: 10,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    paddingVertical: 4,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  iconColumn: {
+    width: 20,
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 8,
+  },
+  verticalLine: {
+    width: 2,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planeIcon: {
+    transform: [{ rotate: '180deg' }],
+    backgroundColor: 'transparent',
   },
   cityBox: {
-    padding: 4,
+    paddingBottom: 4,
   },
   cityCode: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   cityText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
-    marginTop: -2,
+    marginTop: -4,
     textTransform: 'capitalize',
-  },
-  arrow: {
-    marginHorizontal: 4,
   },
   footer: {
     flexDirection: 'row',
@@ -167,8 +210,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 12,
     marginLeft: 6,
     fontWeight: '500',
+  },
+  operatedByText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
 });

@@ -156,5 +156,16 @@
     "restoreSuccess": "Data restored successfully",
     "invalidBackup": "Invalid backup file",
     "unsupportedVersion": "Unsupported schema version",
+    "airlineDatabase": "AIRLINES DATABASE",
+    "syncRules": "Sync Registration Rules",
+    "syncing": "Syncing...",
+    "updateHint": "Update online check-in opening times for all airlines via AI.",
+    "aiEngine": "AI ENGINE (ADVANCED)",
+    "customKey": "Custom Gemini API Key",
+    "customKeyHint": "If the system key stops working, insert your own here.",
+    "updateSuccessTitle": "Database Updated!",
+    "updateSuccessMessage": "The following airlines changed their registration rules:",
+    "upToDateTitle": "Up to Date",
+    "upToDateMessage": "All airline registration rules are current. No changes found."
   }
 }

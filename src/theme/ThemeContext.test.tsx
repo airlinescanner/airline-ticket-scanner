@@ -18,8 +18,8 @@ describe('ThemeContext', () => {
     expect(themes.dark).toBeDefined();
     
     // Проверяем структуру токенов
-    expect(themes.light.colors.background.app).toBe('#E8F4FD');
-    expect(themes.dark.colors.background.app).toBe('#1A1F2E');
+    expect(themes.light.colors.background.app).toBe('#CCE0F2');
+    expect(themes.dark.colors.background.app).toBe('#143B57');
   });
 
   /**
@@ -28,9 +28,9 @@ describe('ThemeContext', () => {
   it('должен содержать корректные токены для темной темы', () => {
     const dark = themes.dark;
     
-    expect(dark.colors.background.app).toBe('#1A1F2E');
-    expect(dark.colors.background.card).toBe('#242B3D');
-    expect(dark.colors.accent.primary).toBe('#00C853');
+    expect(dark.colors.background.app).toBe('#143B57');
+    expect(dark.colors.background.card).toBe('#274966');
+    expect(dark.colors.accent.primary).toBe('#2979FF');
     expect(dark.colors.text.primary).toBe('#FFFFFF');
     expect(dark.colors.text.secondary).toBe('#8A9BB5');
     expect(dark.colors.button.primary.background).toBe('#2979FF');
@@ -43,9 +43,9 @@ describe('ThemeContext', () => {
   it('должен содержать корректные токены для светлой темы', () => {
     const light = themes.light;
     
-    expect(light.colors.background.app).toBe('#E8F4FD');
-    expect(light.colors.background.card).toBe('#FFFFFF');
-    expect(light.colors.accent.primary).toBe('#F5A623');
+    expect(light.colors.background.app).toBe('#CCE0F2');
+    expect(light.colors.background.card).toBe('#E8F1FA');
+    expect(light.colors.accent.primary).toBe('#2979FF');
     expect(light.colors.text.primary).toBe('#2C3E50');
     expect(light.colors.text.secondary).toBe('#7F8C8D');
     expect(light.colors.button.primary.background).toBe('#2979FF');
@@ -108,4 +108,3 @@ describe('ThemeContext', () => {
     });
   });
 });
-

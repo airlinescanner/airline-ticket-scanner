@@ -18,7 +18,7 @@ export function EmptyState({ title, message, icon }: EmptyStateProps): React.JSX
   return (
     <View style={styles.container}>
       {icon && (
-        <View style={[styles.iconContainer, { backgroundColor: tokens.colors.background.buttonSecondary }]}>
+        <View style={[styles.iconContainer, { backgroundColor: tokens.colors.background.card }]}>
           <Ionicons name={icon as any} size={64} color={tokens.colors.text.secondary} />
         </View>
       )}
