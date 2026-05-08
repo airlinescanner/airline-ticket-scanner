@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ustimweb72.airlineticketscanner",
       "infoPlist": {
-        "NSCameraUsageDescription": "Дозвольте доступ до камери для сканування квитків."
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) потребує доступу до камери для сканування квитків."
       }
     },
     "android": {
@@ -58,6 +58,11 @@
           "enableCodeScanner": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a49898a4-a99b-4dbd-929a-b36054a6b456"
+      }
+    }
   }
 }
