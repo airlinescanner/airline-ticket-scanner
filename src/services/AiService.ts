@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { TicketData } from "../types/ticket";
 import { API_CONFIG } from "../config/ApiConfig";
 import { secretService } from './SecretService';
@@ -11,10 +11,11 @@ export enum AiProvider {
 export class AiService {
   
   async analyzeTicket(imageUri: string, provider?: AiProvider, modelName?: string): Promise<TicketData[]> {
-    const groqKey = API_CONFIG.GROQ_API_KEY;
-    const mistralKey = API_CONFIG.MISTRAL_API_KEY;
+    const groqKey = await secretService.getGroqApiKey();
+    const mistralKey = await secretService.getMistralApiKey();
 
     if (provider === AiProvider.MISTRAL && mistralKey) {
+      console.log('[AiService] Using Mistral for ticket analysis');
       return await this.executeMistralAnalysis(mistralKey, imageUri);
     }
 
@@ -22,15 +23,17 @@ export class AiService {
       throw new Error('Groq API Key is missing');
     }
 
-    return await this.executeGroqAnalysis(groqKey, imageUri, modelName || API_CONFIG.GROQ_MODELS[0]);
+    const selectedModel = modelName || API_CONFIG.GROQ_MODELS[0];
+    console.log('[AiService] Using Groq model:', selectedModel);
+    return await this.executeGroqAnalysis(groqKey, imageUri, selectedModel);
   }
 
   /**
    * Анализ текстового промпта (без картинки)
    */
   async analyzeText(prompt: string, provider?: AiProvider): Promise<string> {
-    const groqKey = API_CONFIG.GROQ_API_KEY;
-    const mistralKey = API_CONFIG.MISTRAL_API_KEY;
+    const groqKey = await secretService.getGroqApiKey();
+    const mistralKey = await secretService.getMistralApiKey();
 
     const useProvider = provider || AiProvider.GROQ;
     
@@ -66,7 +69,7 @@ export class AiService {
    * Поиск в интернете через Tavily
    */
   async searchWithTavily(query: string): Promise<string> {
-    const apiKey = API_CONFIG.TAVILY_API_KEY;
+    const apiKey = await secretService.getTavilyApiKey();
     if (!apiKey) throw new Error('Tavily API Key is missing');
 
     try {
@@ -100,7 +103,7 @@ export class AiService {
    * Арбитраж: когда два ИИ разошлись во мнениях, просим основной ИИ рассудить
    */
   async arbitrateMismatches(imageUri: string, result1: TicketData[], result2: TicketData[]): Promise<TicketData[]> {
-    const groqKey = API_CONFIG.GROQ_API_KEY;
+    const groqKey = await secretService.getGroqApiKey();
     const modelName = API_CONFIG.GROQ_MODELS[0]; // Используем самую мощную модель как судью
 
     const base64Image = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' });
@@ -191,40 +194,51 @@ export class AiService {
   private async executeGroqAnalysis(apiKey: string, imageUri: string, modelName: string): Promise<TicketData[]> {
     const base64Image = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' });
     
+    // Проверяем, поддерживает ли модель vision
+    const isVisionModel = modelName.includes('vision') || modelName.includes('scout') || modelName.includes('-vl');
+    
+    const requestBody: any = {
+      model: modelName,
+      temperature: 0.1
+    };
+
+    if (isVisionModel) {
+      // Для vision-моделей используем массив content
+      requestBody.messages = [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: this.getPrompt() },
+            {
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${base64Image}` }
+            }
+          ]
+        }
+      ];
+    } else {
+      // Для обычных моделей используем строку (fallback на OCR через другой сервис)
+      throw new Error('Модель не поддерживает vision. Используйте llama-3.2-90b-vision-preview или llama-3.2-11b-vision-preview');
+    }
+    
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: this.getPrompt() },
-              {
-                type: "image_url",
-                image_url: { url: `data:image/jpeg;base64,${base64Image}` }
-              }
-            ]
-          }
-        ],
-        temperature: 0.1
-        // Убрали response_format: { type: "json_object" } для большей стабильности
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('[AiService] Groq API Error Response:', JSON.stringify(data, null, 2));
       throw new Error(`Groq API Error: ${data.error?.message || response.statusText}`);
     }
 
     const content = data.choices[0]?.message?.content;
-
-    
+    console.log(`[AiService] Received response from ${modelName}:`, content ? content.substring(0, 100) + '...' : 'EMPTY');
     if (!content) return [];
     
     try {
@@ -239,7 +253,7 @@ export class AiService {
     return `
       Extract flight details from this ticket image.
       Return ONLY a JSON array of objects. 
-      Fields: passengerName, airlineName, airlineCode, flightNumber, departureDate (YYYY-MM-DD), departureTime, departureCity, departureCountry, departureAirport, arrivalCity, arrivalCountry, arrivalAirport, seat, serviceClass, bookingReference, operatingAirlineName, operatingAirlineCode.
+      Fields: passengerName, airlineName, airlineCode, flightNumber, departureDate (YYYY-MM-DD), departureTime, departureCity, departureCountry, departureAirport (MANDATORY 3-letter IATA code, e.g., KIV, VIE, MUC), arrivalCity, arrivalCountry, arrivalAirport (MANDATORY 3-letter IATA code, e.g., VIE, IBZ, NCE), seat, serviceClass, bookingReference, operatingAirlineName, operatingAirlineCode.
       
       CRITICAL RULES:
       1. CODESHARE (Operated by): If you see "Operated by" and the operating airline is DIFFERENT from the selling airline, extract its name to "operatingAirlineName" and its code to "operatingAirlineCode". 

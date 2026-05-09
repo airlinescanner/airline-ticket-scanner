@@ -12,6 +12,7 @@ import { Card } from '../components/Card';
 import { ScreenGradient } from '../components/ScreenGradient';
 import { formatDateToDisplay } from '../utils/dateUtils';
 import { openUrl } from '../utils/linkingUtils';
+import { extractIataCode, cleanCityName } from '../utils/stringUtils';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
@@ -162,10 +163,10 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                       <View style={styles.routeBox}>
                         <View style={styles.airportBox}>
                           <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>
-                            {ticket.departureCity || ticket.departureAirport}
+                            {cleanCityName(ticket.departureCity) || extractIataCode(ticket.departureAirport)}
                           </Text>
                           <Text style={[styles.locationText, { color: tokens.colors.text.secondary }]}>
-                            {ticket.departureAirport}
+                            {extractIataCode(ticket.departureAirport)}
                           </Text>
                           <Text style={[styles.airportTime, { color: tokens.colors.text.primary }]}>
                             {ticket.departureTime}
@@ -176,12 +177,10 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                         
                         <View style={[styles.airportBox, { alignItems: 'flex-end' }]}>
                           <Text style={[styles.airportCode, { color: tokens.colors.text.primary }]}>
-                            {(ticket.arrivalCity || 
-                              trip.tickets?.find(t => t.departureAirport === ticket.arrivalAirport && t.departureCity)?.departureCity) || 
-                              ticket.arrivalAirport}
+                            {cleanCityName(ticket.arrivalCity) || extractIataCode(ticket.arrivalAirport)}
                           </Text>
                           <Text style={[styles.locationText, { color: tokens.colors.text.secondary, textAlign: 'right' }]}>
-                            {ticket.arrivalAirport}
+                            {extractIataCode(ticket.arrivalAirport)}
                           </Text>
                           <Text style={[styles.airportTime, { color: tokens.colors.text.secondary }]}>
                              — 

@@ -76,7 +76,8 @@ export class AirlineUpdateService {
     let combinedSearchContext = '';
 
     // 1. Собираем информацию из интернета для каждой авиакомпании через Tavily
-    for (const airline of airlines) {
+    for (let idx = 0; idx < airlines.length; idx++) {
+      const airline = airlines[idx];
       const query = `official online check-in opening time for ${airline.name} (${airline.iataCode}) ${airline.registrationUrl || ''} 2024 2025`;
 
       onStatus?.(`Searching: ${airline.name}...`);
@@ -113,7 +114,8 @@ export class AirlineUpdateService {
 
       const batchChanges: UpdateChange[] = [];
 
-      for (const update of updates) {
+      for (let idx = 0; idx < updates.length; idx++) {
+        const update = updates[idx];
         const localAirline = airlines.find(a => a.iataCode === update.iataCode);
         
         if (localAirline && typeof update.hours === 'number' && !isNaN(update.hours)) {

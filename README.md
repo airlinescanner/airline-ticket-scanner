@@ -45,6 +45,18 @@ npm run android
 npm run web
 ```
 
+## Переменные окружения для AI
+
+Для сборок EAS (и локального запуска) ключи берутся из `EXPO_PUBLIC_*`:
+
+- `EXPO_PUBLIC_GROQ_API_KEY`
+- `EXPO_PUBLIC_MISTRAL_API_KEY`
+- `EXPO_PUBLIC_TAVILY_API_KEY`
+- `EXPO_PUBLIC_MISTRAL_MODEL` (опционально, по умолчанию `mistral-small-latest`)
+- `EXPO_PUBLIC_GROQ_MODELS` (опционально, CSV-список моделей)
+
+Если ключи не заданы, приложение соберётся, но AI-функции будут возвращать ошибку отсутствующего ключа.
+
 ## Основные возможности
 
 - ✅ Сканирование авиабилетов через камеру

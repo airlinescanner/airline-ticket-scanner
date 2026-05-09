@@ -17,22 +17,46 @@ export class ScanCoordinator {
 
 
     const groqModels = API_CONFIG.GROQ_MODELS || [];
+    const model1 = groqModels[0] || 'meta-llama/llama-4-scout-17b-16e-instruct';
+    const model2 = groqModels[1] || 'meta-llama/llama-4-scout-17b-16e-instruct';
 
     // Используем исходное изображение напрямую (без сжатия, чтобы избежать ошибок нативных модулей)
     let processedUri = imageUri;
 
-    // 2. Запускаем две разные ИИ одновременно: Mistral (Главный) + Groq (Проверяющий)
-    const mistralPromise = aiService.analyzeTicket(processedUri, AiProvider.MISTRAL).catch(err => {
-      console.warn('[ScanCoordinator] Mistral failed:', err);
-      return [] as TicketData[];
-    });
+    // 2. Сначала запускаем основную модель, вторую используем как fallback/арбитра.
+    // Это снижает риск ошибок из-за лимитов и таймаутов на мобильной сети.
+    console.log(`[ScanCoordinator] Starting scan: primary=${model1}, secondary=${model2}`);
 
-    const groqPromise = aiService.analyzeTicket(processedUri, AiProvider.GROQ, groqModels[0]).catch(err => {
-      console.warn('[ScanCoordinator] Groq failed:', err);
-      return [] as TicketData[];
-    });
+    let result1: TicketData[] = [];
+    let result2: TicketData[] = [];
+    let lastError: any = null;
 
-    let [result1, result2] = await Promise.all([mistralPromise, groqPromise]);
+    try {
+      try {
+        result1 = await aiService.analyzeTicket(processedUri, AiProvider.GROQ, model1);
+      } catch (e) {
+        console.warn(`[ScanCoordinator] ${model1} failed:`, e);
+        lastError = e;
+      }
+
+      // Fallback на вторую модель только при необходимости.
+      if (result1.length === 0 || model2 !== model1) {
+        try {
+          result2 = await aiService.analyzeTicket(processedUri, AiProvider.GROQ, model2);
+        } catch (e) {
+          console.warn(`[ScanCoordinator] ${model2} failed:`, e);
+          lastError = e;
+        }
+      }
+    } catch (e) {
+      console.error('[ScanCoordinator] Critical failure during scan:', e);
+      throw e;
+    }
+
+    if (result1.length === 0 && result2.length === 0) {
+      // Если обе модели вернули пусто или упали, пробрасываем последнюю ошибку или общее сообщение
+      throw lastError || new Error('Не удалось распознать билет. Проверьте качество фото или подключение.');
+    }
 
     // 3. АРБИТРАЖ (Referee): Если результаты разные, просим перепроверить
     const hasConflicts = this.checkIfArbitrationNeeded(result1, result2);

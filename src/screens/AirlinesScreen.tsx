@@ -83,6 +83,11 @@ export const AirlinesScreen: React.FC = () => {
 
   return (
     <ScreenGradient style={styles.container}>
+      <View style={styles.screenHeader}>
+        <Text style={[styles.screenTitle, { color: tokens.colors.text.primary }]}>
+          {t('airline.list_title')}
+        </Text>
+      </View>
       <View style={styles.searchContainer}>
         <Input
           placeholder={t('airline.search')}
@@ -127,6 +132,15 @@ export const AirlinesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  screenHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 0,
+  },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   searchContainer: {
     padding: 16,

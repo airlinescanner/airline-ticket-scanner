@@ -11,6 +11,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -27,11 +28,19 @@ const Tab = createBottomTabNavigator<BottomTabParamList>();
 export const BottomTabNavigator: React.FC = () => {
   const { tokens, resolvedTheme } = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const headerTopColor = resolvedTheme === 'dark' ? '#082D52' : '#DFEAF5';
+  
+  // Рассчитываем отступ снизу с учетом системной навигации
+  // Если системная панель скрыта или это жесты, insets.bottom будет маленьким
+  // Мы хотим минимум 20 dp отступа для красоты "плавающего" меню
+  const bottomInset = Platform.OS === 'ios' ? 28 : Math.max(insets.bottom, 20);
 
   return (
     <Tab.Navigator
+      initialRouteName="History"
       screenOptions={{
+        headerShown: false,
         // Стиль таб-бара (pill-shaped)
         tabBarStyle: {
           backgroundColor: tokens.colors.navigation.background,
@@ -42,7 +51,7 @@ export const BottomTabNavigator: React.FC = () => {
           shadowOpacity: 0.4,
           shadowRadius: 12,
           position: 'absolute',
-          bottom: Platform.OS === 'ios' ? 28 : 16,
+          bottom: bottomInset,
           left: 24,
           right: 24,
           borderRadius: 32,

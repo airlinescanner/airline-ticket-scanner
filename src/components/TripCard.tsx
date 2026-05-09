@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Trip } from '../types/ticket';
 import { Card } from './Card';
 import { formatDateToDisplay } from '../utils/dateUtils';
+import { extractIataCode, cleanCityName } from '../utils/stringUtils';
 
 interface TripCardProps {
   trip: Trip;
@@ -20,9 +21,11 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onPress }) => {
   const { t } = useTranslation();
 
   const tickets = [...(trip.tickets || [])].sort((a, b) => {
-    const dateA = a.departureDate + (a.departureTime || '00:00');
-    const dateB = b.departureDate + (b.departureTime || '00:00');
-    return dateA.localeCompare(dateB);
+    const timeA = a.departureTime || '00:00';
+    const timeB = b.departureTime || '00:00';
+    const dateTimeA = `${a.departureDate}T${timeA}`;
+    const dateTimeB = `${b.departureDate}T${timeB}`;
+    return dateTimeA.localeCompare(dateTimeB);
   });
 
   if (tickets.length === 0) return null;
@@ -31,19 +34,33 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onPress }) => {
   const routeNodes: { code: string; city: string | null }[] = [];
   
   tickets.forEach(t => {
+    const depCode = extractIataCode(t.departureAirport);
+    const arrCode = extractIataCode(t.arrivalAirport);
+    const depCity = cleanCityName(t.departureCity);
+    const arrCity = cleanCityName(t.arrivalCity);
+
+    const depId = depCode || depCity;
+    const arrId = arrCode || arrCity;
+
     // Добавляем вылет, если его еще нет в списке (или если это первый элемент)
-    if (routeNodes.length === 0 || routeNodes[routeNodes.length - 1].code !== t.departureAirport) {
+    const lastNode = routeNodes[routeNodes.length - 1];
+    const lastId = lastNode ? (lastNode.code || lastNode.city) : null;
+
+    if (routeNodes.length === 0 || lastId !== depId) {
       routeNodes.push({
-        code: t.departureAirport,
-        city: t.departureCity
+        code: depCode,
+        city: depCity
       });
     }
     
     // Добавляем прилет, если он отличается от последнего добавленного
-    if (routeNodes[routeNodes.length - 1].code !== t.arrivalAirport) {
+    const currentLastNode = routeNodes[routeNodes.length - 1];
+    const currentLastId = currentLastNode ? (currentLastNode.code || currentLastNode.city) : null;
+
+    if (currentLastId !== arrId) {
       routeNodes.push({ 
-        code: t.arrivalAirport, 
-        city: t.arrivalCity 
+        code: arrCode, 
+        city: arrCity 
       });
     }
   });

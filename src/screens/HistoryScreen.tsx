@@ -5,12 +5,13 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { StyleSheet, FlatList } from 'react-native';
+import { StyleSheet, FlatList, View, Text } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../components/EmptyState';
 import { ScreenGradient } from '../components/ScreenGradient';
+import { useTheme } from '../theme/ThemeContext';
 import type { RootStackParamList } from '../navigation/types';
 import { tripRepository } from '../services/database/TripRepository';
 import { Trip } from '../types/ticket';
@@ -20,6 +21,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const HistoryScreen: React.FC = () => {
   const { t } = useTranslation();
+  const { tokens } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -52,6 +54,11 @@ export const HistoryScreen: React.FC = () => {
 
   return (
     <ScreenGradient style={styles.container}>
+      <View style={styles.screenHeader}>
+        <Text style={[styles.screenTitle, { color: tokens.colors.text.primary }]}>
+          {t('ticket.history')}
+        </Text>
+      </View>
       <FlatList
         data={trips}
         keyExtractor={(item) => item.id.toString()}
@@ -74,6 +81,15 @@ export const HistoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  screenHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+  },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   listContainer: {
     padding: 16,

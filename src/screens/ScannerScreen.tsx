@@ -7,9 +7,9 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Linking, AppState, AppStateStatus, ActivityIndicator } from 'react-native';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { ViewfinderOverlay } from '../components/ViewfinderOverlay';
 import { PillButton } from '../components/PillButton';
 import { Card } from '../components/Card';
 import type { RootStackParamList } from '../navigation/types';
+import { scanCoordinator } from '../services/ScanCoordinator';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -24,32 +25,81 @@ export const ScannerScreen: React.FC = () => {
   const { tokens } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
+  const isFocused = useIsFocused();
   const cameraRef = useRef<Camera>(null);
   
   const device = useCameraDevice('back');
   const { hasPermission, requestPermission } = useCameraPermission();
   
+  const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
+
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener('change', setAppState);
+    return () => subscription.remove();
+  }, []);
+
+  const mapScanErrorToMessage = (err: unknown): string => {
+    const rawMessage = err instanceof Error ? err.message : '';
+    const message = rawMessage.toLowerCase();
+
+    if (message.includes('api key is missing')) {
+      return t('scanner.errorApiKey');
+    }
+    if (
+      message.includes('network request failed') ||
+      message.includes('failed to fetch') ||
+      message.includes('timeout')
+    ) {
+      return t('scanner.errorNetwork');
+    }
+    if (
+      message.includes('rate limit') ||
+      message.includes('quota') ||
+      message.includes('status 429')
+    ) {
+      return t('scanner.errorRateLimit');
+    }
+    if (message.includes('не поддерживает vision')) {
+      return t('scanner.errorModel');
+    }
+    if (
+      message.includes('не удалось распознать') ||
+      message.includes('неверном формате')
+    ) {
+      return t('scanner.ocrFailed');
+    }
+    if (message.includes('camera is closed')) {
+      return t('scanner.errorCameraClosed');
+    }
+
+    return rawMessage || t('common.error');
+  };
 
   // Обработка захвата изображения
   const handleCapture = async () => {
-    if (!cameraRef.current || isProcessing) return;
+    if (!cameraRef.current || isProcessing || isCapturing) return;
 
     try {
-      setIsProcessing(true);
+      setIsCapturing(true);
       setError(null);
 
       // Захват фото
-      const photo = await cameraRef.current.takePhoto({});
+      const photo = await cameraRef.current.takePhoto({
+        enableShutterSound: true,
+      });
+      setIsCapturing(false);
+      setIsProcessing(true);
 
-      // TODO: Интеграция OCR и парсинга
-      // const ocrResult = await ocrService.recognizeText(`file://${photo.path}`);
-      // const ticketData = ticketParser.parse(ocrResult.rawText);
+      // AI-based OCR через Groq/Mistral
+      const imageUri = photo.path.startsWith('file://') ? photo.path : `file://${photo.path}`;
+      const ticketDataList = await scanCoordinator.coordinateScan(imageUri);
       
-      // Временно: переход с пустыми данными
+      // Переход на экран результата с распознанными данными
       navigation.navigate('ScanResult', { 
-        ticketDataList: [{
+        ticketDataList: ticketDataList.length > 0 ? ticketDataList : [{
           passengerName: null,
           airlineName: null,
           airlineCode: null,
@@ -68,9 +118,10 @@ export const ScannerScreen: React.FC = () => {
           rawJson: '',
         }]
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Scan error:', err);
-      setError(t('common.error'));
+      setError(mapScanErrorToMessage(err));
+      setIsCapturing(false);
     } finally {
       setIsProcessing(false);
     }
@@ -89,20 +140,15 @@ export const ScannerScreen: React.FC = () => {
   };
 
   // Загрузка
-  if (device == null) {
-    return (
-      <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
-        <Text style={[styles.text, { color: tokens.colors.text.primary }]}>
-          {t('common.loading')}
-        </Text>
-      </View>
-    );
-  }
-
-  // Нет разрешения
+  // 1. Проверяем разрешения ПЕРВЫМ делом
   if (!hasPermission) {
     return (
       <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+        <View style={styles.screenHeader}>
+          <Text style={[styles.screenTitle, { color: tokens.colors.text.primary }]}>
+            {t('scanner.title')}
+          </Text>
+        </View>
         <Card style={styles.permissionCard}>
           <Text style={[styles.permissionTitle, { color: tokens.colors.text.primary }]}>
             {t('scanner.permissionDenied')}
@@ -126,22 +172,64 @@ export const ScannerScreen: React.FC = () => {
     );
   }
 
+  // 2. Если разрешения есть, но устройство еще не найдено
+  if (device == null) {
+    return (
+      <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
+        <View style={styles.screenHeader}>
+          <Text style={[styles.screenTitle, { color: tokens.colors.text.primary }]}>
+            {t('scanner.title')}
+          </Text>
+        </View>
+        <Text style={[styles.text, { color: tokens.colors.text.primary }]}>
+          {t('common.loading')}
+        </Text>
+        <Text style={{ color: tokens.colors.text.secondary, marginTop: 8, fontSize: 14 }}>
+          Пошук камери...
+        </Text>
+      </View>
+    );
+  }
+
+  const isCameraActive = isFocused && appState === 'active' && !isProcessing;
+
   return (
     <View style={styles.container}>
+      {/* Заголовок (поверх камеры) */}
+      <View style={styles.screenHeader}>
+        <Text style={[styles.screenTitle, { color: '#FFF' }]}>
+          {t('scanner.title')}
+        </Text>
+      </View>
+
       {/* Камера */}
-      <Camera
-        ref={cameraRef}
-        style={StyleSheet.absoluteFill}
-        device={device}
-        isActive={!isProcessing}
-        photo={true}
-      />
+      {isFocused && (
+        <Camera
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          device={device}
+          isActive={isCameraActive}
+          photo={true}
+        />
+      )}
 
       {/* Оверлей с рамкой */}
       <ViewfinderOverlay />
 
       {/* Кнопка захвата */}
       <View style={styles.controls}>
+        {(isCapturing || isProcessing) && (
+          <Card style={styles.processingCard}>
+            <ActivityIndicator size="small" color={tokens.colors.accent.primary} />
+            <Text style={[styles.processingTitle, { color: tokens.colors.text.primary }]}>
+              {t('common.loading')}
+            </Text>
+            <Text style={[styles.processingSubtitle, { color: tokens.colors.text.secondary }]}>
+              {t('scanner.processing')}
+            </Text>
+          </Card>
+        )}
+
         {error && (
           <Card style={styles.errorCard}>
             <Text style={[styles.errorText, { color: tokens.colors.text.primary }]}>
@@ -161,11 +249,11 @@ export const ScannerScreen: React.FC = () => {
             styles.captureButton,
             { 
               backgroundColor: tokens.colors.button.primary.background,
-              opacity: isProcessing ? 0.5 : 1,
+              opacity: isProcessing || isCapturing ? 0.5 : 1,
             },
           ]}
           onPress={handleCapture}
-          disabled={isProcessing}
+          disabled={isProcessing || isCapturing}
         >
           <View
             style={[
@@ -190,6 +278,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#000',
+  },
+  screenHeader: {
+    position: 'absolute',
+    top: 12,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    zIndex: 10,
+  },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   text: {
     fontSize: 18,
@@ -218,9 +319,25 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: 48,
+    paddingBottom: 100, // Трохи нижче
     paddingHorizontal: 16,
     alignItems: 'center',
+  },
+  processingCard: {
+    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    width: '100%',
+    alignItems: 'center',
+  },
+  processingTitle: {
+    marginTop: 8,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  processingSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
   },
   errorCard: {
     marginBottom: 16,

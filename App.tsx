@@ -11,13 +11,13 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import i18n from './src/i18n'; // Инициализация i18next
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import { initializeDatabase } from './src/services/database';
 import { AlertProvider, useAlert } from './src/theme/AlertContext';
-import { airlineUpdateService } from './src/services/AirlineUpdateService';
 
 /**
  * RootUpdater - фоновый компонент для автоматических задач (раз в неделю)
@@ -30,6 +30,7 @@ function RootUpdater() {
     // Запускаем через 2 секунды после старта, чтобы не мешать загрузке
     const timer = setTimeout(async () => {
       try {
+        const { airlineUpdateService } = await import('./src/services/AirlineUpdateService');
         const changes = await airlineUpdateService.checkAutoUpdate();
         if (changes && changes.length > 0) {
           const message = changes.map(c => 
@@ -55,17 +56,15 @@ function RootUpdater() {
 
 
 /**
- * Компонент загрузки
+ * Компонент загрузки (без ThemeContext, так как рендерится до ThemeProvider)
  */
 function LoadingScreen() {
-  const { tokens } = useTheme();
-
   return (
-    <View style={[styles.loadingContainer, { backgroundColor: tokens.colors.background.app }]}>
-      <Text style={[styles.loadingText, { color: tokens.colors.text.primary }]}>
+    <View style={styles.loadingContainer}>
+      <Text style={styles.loadingText}>
         ✈️
       </Text>
-      <Text style={[styles.loadingSubtext, { color: tokens.colors.text.secondary }]}>
+      <Text style={styles.loadingSubtext}>
         Завантаження...
       </Text>
     </View>
@@ -92,22 +91,23 @@ export default function App() {
       });
   }, []);
 
+  // Показываем загрузку ДО инициализации ThemeProvider
+  if (!isDbReady) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <I18nextProvider i18n={i18n}>
-      <ThemeProvider>
-        <AlertProvider>
-          <RootUpdater />
-          {!isDbReady ? (
-            <LoadingScreen />
-          ) : (
-            <>
-              <StatusBar style="auto" />
-              <AppNavigator />
-            </>
-          )}
-        </AlertProvider>
-      </ThemeProvider>
-    </I18nextProvider>
+    <SafeAreaProvider>
+      <I18nextProvider i18n={i18n}>
+        <ThemeProvider>
+          <AlertProvider>
+            <RootUpdater />
+            <StatusBar style="auto" />
+            <AppNavigator />
+          </AlertProvider>
+        </ThemeProvider>
+      </I18nextProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -116,12 +116,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#1A1F2E', // Темний фон за замовчуванням
   },
   loadingText: {
     fontSize: 64,
     marginBottom: 16,
+    color: '#FFFFFF',
   },
   loadingSubtext: {
     fontSize: 18,
+    color: '#8A9BB5',
   },
 });

@@ -47,9 +47,6 @@ yarn-error.*
 coverage/
 __tests__/mocks/
 
-# secrets
-src/config/ApiConfig.ts
-
 # temp files
 *.tmp
 *.bak

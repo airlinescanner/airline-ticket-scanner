@@ -55,7 +55,13 @@
     "permissionDenied": "Camera access denied",
     "permissionInstructions": "Please grant camera access in device settings",
     "lowQuality": "Image is blurry or low quality. Try again",
-    "ocrFailed": "Failed to recognize text. Try again"
+    "ocrFailed": "Failed to recognize text. Try again",
+    "processing": "Recognizing the ticket, please wait...",
+    "errorApiKey": "API key for recognition is not configured. Reinstall the app or contact the developer.",
+    "errorNetwork": "Network error. Check your internet connection and try again.",
+    "errorRateLimit": "AI service rate limit reached. Please try again later.",
+    "errorModel": "Configured AI model does not support image recognition.",
+    "errorCameraClosed": "Camera is temporarily unavailable. Please try again."
   },
   "ticket": {
     "passengerName": "Passenger Name",
