@@ -461,9 +461,11 @@ export class AirlineRepository {
       throw new Error('DB_VALIDATION_ERROR: Check-in hours must be between 1 and 720');
     }
 
-    // Валидация URL регистрации (должен начинаться с https://)
-    if (airline.registrationUrl && !airline.registrationUrl.startsWith('https://')) {
-      throw new Error('DB_VALIDATION_ERROR: Registration URL must start with https://');
+    // Валидация URL регистрации (смягченная для автоматических обновлений)
+    if (airline.registrationUrl && airline.registrationUrl.length > 0) {
+      if (!airline.registrationUrl.includes('.') || airline.registrationUrl.length < 5) {
+        throw new Error('DB_VALIDATION_ERROR: Invalid Registration URL format');
+      }
     }
   }
 

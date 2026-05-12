@@ -74,28 +74,40 @@ export const SettingsScreen: React.FC = () => {
     setSyncStatus('Starting...');
     
     try {
-      const changes = await airlineUpdateService.performUpdate((progress, status) => {
+      const report = await airlineUpdateService.performUpdate((progress, status) => {
         setSyncProgress(progress);
         setSyncStatus(status);
       });
       
-      if (changes.length > 0) {
-        const message = changes.map(c => 
-          `• ${c.airlineName}: ${c.oldHours}h → ${c.newHours}h`
-        ).join('\n');
+      let reportMessage = '';
 
-        showAlert({
-          title: t('settings.updateSuccessTitle'),
-          message: `${t('settings.updateSuccessMessage')}\n\n${message}`,
-          buttons: [{ text: t('common.ok') }]
+      if (report.changes.length > 0) {
+        reportMessage += `${t('settings.updateSuccessMessage')}:\n`;
+        report.changes.forEach(c => {
+          const changeText = c.field === 'hours' ? `${c.oldValue}h → ${c.newValue}h` : 
+                           c.field === 'url' ? t('settings.linkUpdated', 'Link updated') : 
+                           `${c.newValue} (rules updated)`;
+          reportMessage += `• ${c.airlineName}: ${changeText}\n`;
         });
-      } else {
-        showAlert({
-          title: t('settings.upToDateTitle'),
-          message: t('settings.upToDateMessage'),
-          buttons: [{ text: t('common.ok') }]
+        reportMessage += '\n';
+      }
+
+      if (report.failed.length > 0) {
+        reportMessage += `⚠️ ${t('common.error')}:\n`;
+        report.failed.forEach(f => {
+          reportMessage += `• ${f.airlineName}: ${f.reason}\n`;
         });
       }
+
+      if (report.changes.length === 0 && report.failed.length === 0) {
+        reportMessage = t('settings.upToDateMessage');
+      }
+
+      showAlert({
+        title: t('settings.airlineDatabase'),
+        message: reportMessage,
+        buttons: [{ text: t('common.ok') }]
+      });
     } catch (e) {
       showAlert({
         title: t('common.error'),

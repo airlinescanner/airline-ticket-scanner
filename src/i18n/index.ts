@@ -31,6 +31,7 @@ export const initI18n = async () => {
       resources,
       lng: savedLanguage,
       fallbackLng: 'uk',
+      compatibilityJSON: 'v3',
       interpolation: {
         escapeValue: false,
       },

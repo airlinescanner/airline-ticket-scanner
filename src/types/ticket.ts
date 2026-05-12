@@ -17,6 +17,7 @@ export interface TicketData {
   bookingReference: string | null;
   operatingAirlineName?: string | null; // Авиакомпания, которая выполняет рейс (если отличается)
   operatingAirlineCode?: string | null; // Код оперирующей авиакомпании
+  confidence?: Record<string, number>;   // Уверенность ИИ по полям (0.0 - 1.0)
   rawJson: string;                  
 }
 

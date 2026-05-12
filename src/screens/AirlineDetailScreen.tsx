@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Linking, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
@@ -197,7 +197,20 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
 
   return (
     <ScreenGradient style={styles.container}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 25 }]}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView 
+          contentContainerStyle={[
+            styles.content, 
+            { 
+              paddingTop: insets.top + 25,
+              paddingBottom: insets.bottom + 100 // Увеличиваем отступ снизу для клавиатуры
+            }
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity 
@@ -337,7 +350,8 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </Card>
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenGradient>
   );
 };

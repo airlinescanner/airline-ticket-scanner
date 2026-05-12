@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
 import { useTranslation } from 'react-i18next';
@@ -20,15 +21,15 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
   const { tokens } = useTheme();
   const { t } = useTranslation();
   const { showAlert } = useAlert();
-  const { ticketDataList } = route.params;
+  const insets = useSafeAreaInsets();
+  const { ticketDataList = [] } = route.params || {};
 
   // Общее имя пассажира для всех рейсов
   const [passengerName, setPassengerName] = useState(ticketDataList[0]?.passengerName || '');
   
   // Состояние для каждого найденного рейса (сегмента)
-  // Сортируем по дате и времени перед отображением
   const [flights, setFlights] = useState(
-    [...ticketDataList]
+    [...(ticketDataList || [])]
       .sort((a, b) => {
         const dateA = new Date(`${a.departureDate}T${a.departureTime || '00:00'}`).getTime();
         const dateB = new Date(`${b.departureDate}T${b.departureTime || '00:00'}`).getTime();
@@ -52,6 +53,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
         operatingAirlineName: t.operatingAirlineName || '',
         operatingAirlineCode: t.operatingAirlineCode || '',
         rawJson: t.rawJson,
+        confidence: t.confidence || {}, // Маппим уверенность
       }))
   );
 
@@ -84,20 +86,14 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
     try {
       setIsSaving(true);
       
-      // 0. Проверка на дубликаты
+      // 0. Автоматическая очистка дубликатов
       for (const flight of flights) {
         const isoDate = parseDisplayDateToISO(flight.departureDate);
-        const existing = await ticketRepository.findDuplicate(flight.flightNumber, isoDate, flight.bookingReference);
+        const duplicate = await ticketRepository.findDuplicate(flight.flightNumber, isoDate, flight.airlineCode, flight.bookingReference);
         
-        if (existing) {
-          setIsSaving(false);
-          showAlert({
-            title: t('common.warning', 'Попередження'),
-            message: `Квиток на рейс ${flight.flightNumber} (${flight.departureDate}) вже існує у вашій історії. Дублювання заборонено.`,
-            type: 'warning',
-            buttons: [{ text: t('common.ok') }]
-          });
-          return; // Полный отказ в сохранении
+        if (duplicate) {
+          console.log(`[ScanResultScreen] Auto-cleaning duplicate ticket ID: ${duplicate.id}`);
+          await ticketRepository.delete(duplicate.id);
         }
       }
 
@@ -235,11 +231,18 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
     );
   };
 
+  const getWarning = (score?: number) => {
+    if (score !== undefined && score < 0.7 && score > 0) {
+      return t('ticket.lowConfidence', 'Low confidence');
+    }
+    return undefined;
+  };
+
   return (
     <ScreenGradient style={styles.container}>
       <KeyboardAvoidingView 
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Text style={[styles.title, { color: tokens.colors.text.primary }]}>
@@ -264,6 +267,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
             onChangeText={setPassengerName}
             placeholder="IVANOV/IVAN"
             error={passengerConflicts.hasConflict ? 'Mismatch detected' : undefined}
+            warning={getWarning(ticketDataList[0]?.confidence?.passengerName)}
           />
           {passengerConflicts.hasConflict && renderConflictInfo('passengerName', passengerConflicts.ai1, passengerConflicts.ai2)}
         </View>
@@ -271,6 +275,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
         {/* Список Рейсов */}
         {flights.map((flight, index) => {
           const { conflicts, ai1, ai2 } = getConflicts(index);
+          const conf = flight.confidence;
           
           return (
             <View key={index} style={[styles.card, { backgroundColor: tokens?.colors?.background?.card || '#FFFFFF', marginTop: 16 }]}>
@@ -283,6 +288,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                 value={flight.airlineName}
                 onChangeText={(text) => handleFlightChange(index, 'airlineName', text)}
                 placeholder="Lot Polish Airlines"
+                warning={getWarning(conf?.airlineName)}
               />
 
               {!!flight.operatingAirlineName && (
@@ -303,6 +309,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                       onChangeText={(text) => handleFlightChange(index, 'operatingAirlineCode', text)}
                       placeholder="BT"
                       autoCapitalize="characters"
+                      warning={getWarning(conf?.operatingAirlineCode)}
                     />
                   </View>
                 </View>
@@ -316,6 +323,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     onChangeText={(text) => handleFlightChange(index, 'airlineCode', text)}
                     placeholder="LO"
                     autoCapitalize="characters"
+                    warning={getWarning(conf?.airlineCode)}
                   />
                 </View>
                 <View style={styles.spacing} />
@@ -327,6 +335,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     placeholder="LO347"
                     autoCapitalize="characters"
                     error={conflicts.includes('flightNumber') ? 'Mismatch' : undefined}
+                    warning={getWarning(conf?.flightNumber)}
                   />
                 </View>
               </View>
@@ -340,6 +349,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     onChangeText={(text) => handleFlightChange(index, 'departureDate', text)}
                     placeholder="DD.MM.YYYY"
                     error={conflicts.includes('departureDate') ? 'Mismatch' : undefined}
+                    warning={getWarning(conf?.departureDate)}
                   />
                 </View>
                 <View style={styles.spacing} />
@@ -349,6 +359,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     value={flight.departureTime}
                     onChangeText={(text) => handleFlightChange(index, 'departureTime', text)}
                     placeholder="HH:mm"
+                    warning={getWarning(conf?.departureTime)}
                   />
                 </View>
               </View>
@@ -361,6 +372,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     value={flight.departureCity}
                     onChangeText={(text) => handleFlightChange(index, 'departureCity', text)}
                     placeholder="Warsaw"
+                    warning={getWarning(conf?.departureCity)}
                   />
                 </View>
                 <View style={styles.spacing} />
@@ -371,6 +383,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     onChangeText={(text) => handleFlightChange(index, 'departureAirport', text)}
                     placeholder="WAW"
                     autoCapitalize="characters"
+                    warning={getWarning(conf?.departureAirport)}
                   />
                 </View>
               </View>
@@ -381,6 +394,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     value={flight.arrivalCity}
                     onChangeText={(text) => handleFlightChange(index, 'arrivalCity', text)}
                     placeholder="Paris"
+                    warning={getWarning(conf?.arrivalCity)}
                   />
                 </View>
                 <View style={styles.spacing} />
@@ -391,6 +405,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                     onChangeText={(text) => handleFlightChange(index, 'arrivalAirport', text)}
                     placeholder="CDG"
                     autoCapitalize="characters"
+                    warning={getWarning(conf?.arrivalAirport)}
                   />
                 </View>
               </View>
@@ -401,13 +416,19 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
                 placeholder="AM6X8Y"
                 autoCapitalize="characters"
                 error={conflicts.includes('bookingReference') ? 'Mismatch' : undefined}
+                warning={getWarning(conf?.bookingReference)}
               />
               {conflicts.includes('bookingReference') && renderConflictInfo('bookingReference', ai1.bookingReference, ai2.bookingReference)}
             </View>
           );
         })}
 
-          <View style={styles.buttonContainer}>
+          <View
+            style={[
+              styles.buttonContainer,
+              { marginBottom: Platform.OS === 'android' ? Math.max(insets.bottom, 24) : Math.max(insets.bottom, 12) },
+            ]}
+          >
             <PillButton
               title={t('common.cancel')}
               onPress={() => navigation.goBack()}
@@ -430,7 +451,7 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  scrollContent: { padding: 16, paddingBottom: 100 },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, marginTop: 10 },
   sectionTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 12, letterSpacing: 1 },
   card: {

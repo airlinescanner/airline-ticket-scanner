@@ -5,10 +5,17 @@ import { useTheme } from '../theme/ThemeContext';
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  warning?: string;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, style, ...props }) => {
+export const Input: React.FC<InputProps> = ({ label, error, warning, style, ...props }) => {
   const { tokens } = useTheme();
+
+  const getBorderColor = () => {
+    if (error) return tokens?.colors?.status?.error || 'red';
+    if (warning) return '#FFCC00'; // Yellow for warnings
+    return tokens?.colors?.border?.default || '#CCCCCC';
+  };
 
   return (
     <View style={styles.container}>
@@ -23,23 +30,26 @@ export const Input: React.FC<InputProps> = ({ label, error, style, ...props }) =
           {
             backgroundColor: tokens?.colors?.background?.card || '#FFFFFF',
             color: tokens?.colors?.text?.primary || '#000000',
-            borderColor: error 
-              ? (tokens?.colors?.status?.error || 'red') 
-              : (tokens?.colors?.border?.default || '#CCCCCC'),
+            borderColor: getBorderColor(),
             borderRadius: tokens?.borderRadius?.md || 8,
             paddingVertical: 8,
             paddingHorizontal: 12,
+            borderWidth: (error || warning) ? 2 : 1,
           },
           style,
         ]}
         placeholderTextColor={tokens.colors.text.tertiary}
         {...props}
       />
-      {error && (
+      {error ? (
         <Text style={[styles.error, { color: tokens.colors.status.error }]}>
           {error}
         </Text>
-      )}
+      ) : warning ? (
+        <Text style={[styles.error, { color: '#FFCC00' }]}>
+          {warning}
+        </Text>
+      ) : null}
     </View>
   );
 };

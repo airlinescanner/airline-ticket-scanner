@@ -1,4 +1,5 @@
 import { aiService, AiProvider } from './AiService';
+import { ocrService } from './OCRService';
 import { TicketData } from '../types/ticket';
 import { API_CONFIG } from '../config/ApiConfig';
 
@@ -13,80 +14,55 @@ export class ScanCoordinator {
    * Запускает ДВОЙНУЮ проверку ИИ: Groq 11b + Groq 90b
    */
   async coordinateScan(imageUri: string): Promise<TicketData[]> {
-    
+    // 1. Предобработка изображения (ч/б, контраст, ресайз)
+    const processedUri = await ocrService.prepareImageForOcr(imageUri);
+    // 2. Локальное распознавание (ML Kit) - дает скелет данных
+    console.log(`[ScanCoordinator] Running local OCR...`);
+    const ocrResult = await ocrService.recognizeText(processedUri);
+    console.log(`[ScanCoordinator] Local OCR done. Text length: ${ocrResult.rawText.length}`);
 
+    console.log(`[ScanCoordinator] Starting sequential scan waterfall...`);
 
-    const groqModels = API_CONFIG.GROQ_MODELS || [];
-    const model1 = groqModels[0] || 'meta-llama/llama-4-scout-17b-16e-instruct';
-    const model2 = groqModels[1] || 'meta-llama/llama-4-scout-17b-16e-instruct';
+    const providers = [AiProvider.GROQ, AiProvider.GEMINI, AiProvider.MISTRAL];
+    let finalResults: TicketData[] = [];
 
-    // Используем исходное изображение напрямую (без сжатия, чтобы избежать ошибок нативных модулей)
-    let processedUri = imageUri;
+    const ocrContext = {
+      text: ocrResult.rawText,
+      blocks: ocrResult.blocks
+    };
 
-    // 2. Сначала запускаем основную модель, вторую используем как fallback/арбитра.
-    // Это снижает риск ошибок из-за лимитов и таймаутов на мобильной сети.
-    console.log(`[ScanCoordinator] Starting scan: primary=${model1}, secondary=${model2}`);
-
-    let result1: TicketData[] = [];
-    let result2: TicketData[] = [];
-    let lastError: any = null;
-
-    try {
+    for (const provider of providers) {
       try {
-        result1 = await aiService.analyzeTicket(processedUri, AiProvider.GROQ, model1);
-      } catch (e) {
-        console.warn(`[ScanCoordinator] ${model1} failed:`, e);
-        lastError = e;
-      }
-
-      // Fallback на вторую модель только при необходимости.
-      if (result1.length === 0 || model2 !== model1) {
-        try {
-          result2 = await aiService.analyzeTicket(processedUri, AiProvider.GROQ, model2);
-        } catch (e) {
-          console.warn(`[ScanCoordinator] ${model2} failed:`, e);
-          lastError = e;
+        console.log(`[ScanCoordinator] Attempting analysis with ${provider}...`);
+        const results = await aiService.analyzeTicket(processedUri, provider, ocrContext);
+        
+        if (results && results.length > 0) {
+          console.log(`[ScanCoordinator] Success with ${provider}! Found ${results.length} tickets.`);
+          finalResults = results;
+          break; 
+        } else {
+          console.warn(`[ScanCoordinator] ${provider} returned no data.`);
         }
-      }
-    } catch (e) {
-      console.error('[ScanCoordinator] Critical failure during scan:', e);
-      throw e;
-    }
-
-    if (result1.length === 0 && result2.length === 0) {
-      // Если обе модели вернули пусто или упали, пробрасываем последнюю ошибку или общее сообщение
-      throw lastError || new Error('Не удалось распознать билет. Проверьте качество фото или подключение.');
-    }
-
-    // 3. АРБИТРАЖ (Referee): Если результаты разные, просим перепроверить
-    const hasConflicts = this.checkIfArbitrationNeeded(result1, result2);
-    if (hasConflicts && result1.length > 0 && result2.length > 0) {
-      
-
-      try {
-        const finalResult = await aiService.arbitrateMismatches(processedUri, result1, result2);
-        // Если арбитраж прошел успешно, подменяем ОБА результата финальным вердиктом.
-        // Это уберет красные сообщения Mismatch Detected в интерфейсе.
-        result1 = finalResult; 
-        result2 = finalResult;
-      } catch (e) {
-        console.warn('[ScanCoordinator] Arbitration failed:', e);
+      } catch (err: any) {
+        console.warn(`[ScanCoordinator] ${provider} failed: ${err.message}`);
       }
     }
 
-    if (result1.length === 0 && result2.length === 0) {
-      throw new Error('Не удалось распознать билет. Проверьте подключение.');
+    if (!finalResults || finalResults.length === 0) {
+      throw new Error('Не удалось распознать данные ни одним из сервисов. Проверьте фото или лимиты API.');
     }
 
-    return this.mergeResults(result1, result2);
+    return finalResults;
   }
 
   private checkIfArbitrationNeeded(res1: TicketData[], res2: TicketData[]): boolean {
-    if (res1.length !== res2.length) return true;
-    for (let i = 0; i < res1.length; i++) {
-      if (res1[i].bookingReference !== res2[i].bookingReference) return true;
-      if (res1[i].departureDate !== res2[i].departureDate) return true;
-      if (res1[i].flightNumber !== res2[i].flightNumber) return true;
+    const r1 = res1 || [];
+    const r2 = res2 || [];
+    if (r1.length !== r2.length) return true;
+    for (let i = 0; i < r1.length; i++) {
+      if (r1[i]?.bookingReference !== r2[i]?.bookingReference) return true;
+      if (r1[i]?.departureDate !== r2[i]?.departureDate) return true;
+      if (r1[i]?.flightNumber !== r2[i]?.flightNumber) return true;
     }
     return false;
   }
@@ -99,11 +75,15 @@ export class ScanCoordinator {
 
     
     // Используем Gemini как основной результат, Groq как проверочный
-    const primary = gemini.length > 0 ? gemini : groq;
-    const secondary = gemini.length > 0 ? groq : gemini;
+    const res1 = Array.isArray(gemini) ? gemini : [];
+    const res2 = Array.isArray(groq) ? groq : [];
+
+    const primary = res1.length > 0 ? res1 : res2;
+    const secondary = res1.length > 0 ? res2 : res1;
 
     return primary.map((pTicket, index) => {
-      const sTicket = secondary[index] || secondary[0];
+      if (!pTicket) return {} as TicketData;
+      const sTicket = (secondary && secondary[index]) || (secondary && secondary[0]) || {};
       const conflicts: string[] = [];
       
       const compare = (field: string, val1: string, val2: string) => {

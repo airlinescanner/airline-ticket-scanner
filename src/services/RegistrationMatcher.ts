@@ -4,6 +4,7 @@ import { Airline } from '../types/airline';
 import { Ticket } from '../types/ticket';
 import { airlineRepository } from './database/AirlineRepository';
 import { timezoneService } from './TimezoneService';
+import { airlineUpdateService } from './AirlineUpdateService';
 
 /**
  * Результат сопоставления с реестром авиакомпаний
@@ -35,7 +36,13 @@ export class RegistrationMatcher {
 
     // Поиск авиакомпании по коду (приоритет оперирующей компании)
     const targetCode = ticket.operatingAirlineCode || ticket.airlineCode;
-    const airline = await airlineRepository.findByCode(targetCode);
+    let airline = await airlineRepository.findByCode(targetCode);
+    
+    if (!airline) {
+      console.log(`[RegistrationMatcher] Airline ${targetCode} not found in DB. Triggering on-the-fly discovery...`);
+      airline = await airlineUpdateService.fetchAndSaveAirline(targetCode);
+    }
+
     if (!airline) return null;
 
     // 1. Определяем часовой пояс аэропорта вылета

@@ -13,14 +13,14 @@ const STORAGE_KEYS = {
  */
 export class SecretService {
   /**
-   * Получить актуальный API ключ (пользовательский или системный)
+   * Получить Gemini API ключ
    */
-  async getApiKey(): Promise<string> {
+  async getGeminiApiKey(): Promise<string> {
     try {
       const customKey = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_API_KEY);
-      return customKey || API_CONFIG.GROQ_API_KEY;
+      return customKey || API_CONFIG.GEMINI_API_KEY;
     } catch (e) {
-      return API_CONFIG.GROQ_API_KEY;
+      return API_CONFIG.GEMINI_API_KEY;
     }
   }
 

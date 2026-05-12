@@ -50,3 +50,4 @@ __tests__/mocks/
 # temp files
 *.tmp
 *.bak
+*.apk

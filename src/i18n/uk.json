@@ -35,6 +35,8 @@
     "error": "Помилка",
     "success": "Успішно",
     "retry": "Спробувати знову",
+    "saveAnyway": "Зберегти копію",
+    "deleteExisting": "Видалити існуючий",
     "letters_2": "(2 символи)",
     "letters_3": "(3 символи)"
   },
@@ -87,7 +89,9 @@
     "airlineName": "Назва авіакомпанії",
     "departureCity": "Місто відправлення",
     "arrivalCity": "Місто прибуття",
-    "bookingReference": "Код бронювання (PNR)"
+    "bookingReference": "Код бронювання (PNR)",
+    "duplicateFound": "Цей квиток уже є в історії.",
+    "saveAnywayPrompt": "Бажаєте зберегти копію чи видалити існуючий?"
   },
   "trip": {
     "confirmDelete": "Видалити всю поїздку та всі квитки?"

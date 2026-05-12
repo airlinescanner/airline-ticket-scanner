@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   Animated, 
   Dimensions,
-  Platform 
+  Platform,
+  ScrollView 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
@@ -133,9 +134,13 @@ export const AlertModal: React.FC<AlertModalProps> = ({
               {title}
             </Text>
             
-            <Text style={[styles.message, { color: tokens.colors.text.secondary }]}>
-              {message}
-            </Text>
+            <View style={{ maxHeight: Dimensions.get('window').height * 0.5, width: '100%', marginBottom: 24 }}>
+              <ScrollView showsVerticalScrollIndicator={true} style={{ width: '100%' }}>
+                <Text style={[styles.message, { color: tokens.colors.text.secondary }]}>
+                  {message}
+                </Text>
+              </ScrollView>
+            </View>
 
             <View style={styles.footer}>
               {buttons.length > 0 ? (
@@ -242,7 +247,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 24,
   },
   footer: {
     width: '100%',

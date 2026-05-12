@@ -22,37 +22,6 @@ import { AlertProvider, useAlert } from './src/theme/AlertContext';
 /**
  * RootUpdater - фоновый компонент для автоматических задач (раз в неделю)
  */
-function RootUpdater() {
-  const { showAlert } = useAlert();
-  const { t } = useTranslation();
-
-  React.useEffect(() => {
-    // Запускаем через 2 секунды после старта, чтобы не мешать загрузке
-    const timer = setTimeout(async () => {
-      try {
-        const { airlineUpdateService } = await import('./src/services/AirlineUpdateService');
-        const changes = await airlineUpdateService.checkAutoUpdate();
-        if (changes && changes.length > 0) {
-          const message = changes.map(c => 
-            `• ${c.airlineName}: ${c.oldHours}h → ${c.newHours}h`
-          ).join('\n');
-
-          showAlert({
-            title: t('settings.updateSuccessTitle'),
-            message: `${t('settings.updateSuccessMessage')}\n\n${message}`,
-            buttons: [{ text: t('common.ok') }]
-          });
-        }
-      } catch (e) {
-        console.error('[RootUpdater] Auto-update failed:', e);
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  return null;
-}
 
 
 /**
@@ -101,7 +70,6 @@ export default function App() {
       <I18nextProvider i18n={i18n}>
         <ThemeProvider>
           <AlertProvider>
-            <RootUpdater />
             <StatusBar style="auto" />
             <AppNavigator />
           </AlertProvider>

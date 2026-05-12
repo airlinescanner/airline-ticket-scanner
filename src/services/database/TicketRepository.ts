@@ -107,33 +107,47 @@ export class TicketRepository {
   /**
    * Проверить, существует ли уже такой билет в базе (защита от дублей)
    */
-  async findDuplicate(flightNumber: string, departureDate: string, bookingReference?: string | null): Promise<Ticket | null> {
+  async findDuplicate(flightNumber: string, departureDate: string, airlineCode: string, bookingReference?: string | null): Promise<Ticket | null> {
     const db = await databaseService.getDatabase();
     
-    // Нормализуем номер рейса: удаляем буквы авиакомпании и пробелы (оставляем только суть)
-    const cleanFlightNumber = flightNumber.toUpperCase().replace(/[^0-9]/g, '');
+    const cleanFlightNumber = flightNumber.toUpperCase().trim();
     const cleanPNR = bookingReference?.trim().toUpperCase() || null;
+    const cleanAirlineCode = airlineCode.toUpperCase().trim();
     
+    console.log(`[TicketRepository] Checking for duplicate: Flight=${cleanFlightNumber}, Date=${departureDate}, Airline=${cleanAirlineCode}, PNR=${cleanPNR}`);
+
     const tickets = await db.getAllAsync<any>(
       'SELECT * FROM tickets WHERE departure_date = ?',
       [departureDate]
     );
 
-    for (const row of tickets) {
-      const rowFlightClean = row.flight_number.toUpperCase().replace(/[^0-9]/g, '');
-      const rowPNR = row.booking_reference?.trim().toUpperCase() || null;
+    console.log(`[TicketRepository] Found ${tickets.length} potential matches for date ${departureDate}`);
 
-      // Если PNR совпадает — это 100% дубликат
+    for (const row of tickets) {
+      const rowFlight = row.flight_number.toUpperCase().trim();
+      const rowPNR = row.booking_reference?.trim().toUpperCase() || null;
+      const rowAirline = row.airline_code.toUpperCase().trim();
+      
+      console.log(`[TicketRepository] Comparing with: ID=${row.id}, Flight=${rowFlight}, Airline=${rowAirline}, PNR=${rowPNR}`);
+
+      // 1. Если PNR совпадает — это 100% дубликат
       if (cleanPNR && rowPNR === cleanPNR) {
+        console.log(`[TicketRepository] DUPLICATE FOUND by PNR: ${cleanPNR}`);
         return this.mapRowToTicket(row);
       }
 
-      // Если номера рейсов (после чистки) совпадают — это дубликат
-      if (rowFlightClean === cleanFlightNumber) {
+      // 2. Если номер рейса И код авиакомпании совпадают — это дубликат
+      const isSameFlight = rowFlight === cleanFlightNumber || 
+                           (rowFlight.includes(cleanFlightNumber) && rowAirline === cleanAirlineCode) ||
+                           (cleanFlightNumber.includes(rowFlight) && rowAirline === cleanAirlineCode);
+
+      if (isSameFlight && rowAirline === cleanAirlineCode) {
+        console.log(`[TicketRepository] DUPLICATE FOUND by Flight Number: ${rowFlight}`);
         return this.mapRowToTicket(row);
       }
     }
     
+    console.log(`[TicketRepository] No duplicate found.`);
     return null;
   }
 
@@ -141,12 +155,51 @@ export class TicketRepository {
    * Удалить билет
    */
   async delete(id: number): Promise<void> {
-    const db = await databaseService.getDatabase();
-    await db.runAsync('DELETE FROM tickets WHERE id = ?', [id]);
-    // Принудительно сбрасываем WAL-кэш
     try {
+      const db = await databaseService.getDatabase();
+      
+      // 1. Сначала находим детали билета, который хотим удалить
+      const ticket = await this.findById(id);
+      if (!ticket) {
+        console.log(`[TicketRepository] Ticket ${id} already gone or not found.`);
+        return;
+      }
+
+      console.log(`[TicketRepository] Nuclear delete for flight: ${ticket.flightNumber} on ${ticket.departureDate}`);
+
+      // 2. Удаляем ВСЕ билеты с этим номером рейса, датой и кодом авиакомпании 
+      // (на случай если в базе завалялись "призраки" от неудачных сканирований)
+      const result = await db.runAsync(
+        'DELETE FROM tickets WHERE flight_number = ? AND departure_date = ? AND airline_code = ?',
+        [ticket.flightNumber, ticket.departureDate, ticket.airlineCode]
+      );
+      
+      console.log(`[TicketRepository] Deleted ${result.changes} ticket records.`);
+
+      // 3. Если билет был привязан к поездке, проверяем не опустела ли она
+      if (ticket.tripId) {
+        const remainingInTrip = await db.getFirstAsync<{count: number}>(
+          'SELECT COUNT(*) as count FROM tickets WHERE trip_id = ?',
+          [ticket.tripId]
+        );
+        
+        if (!remainingInTrip || remainingInTrip.count === 0) {
+          console.log(`[TicketRepository] Trip ${ticket.tripId} is now empty. Deleting trip.`);
+          await db.runAsync('DELETE FROM trips WHERE id = ?', [ticket.tripId]);
+        }
+      }
+
+      // 4. Принудительная очистка базы
       await db.execAsync('PRAGMA wal_checkpoint(TRUNCATE);');
-    } catch (e) {}
+      // VACUUM может быть тяжелым, но в данном случае он гарантирует физическое удаление
+      // await db.execAsync('VACUUM;'); 
+      
+    } catch (e) {
+      console.error('[TicketRepository] Nuclear delete failed:', e);
+      // Если сложная логика упала, пробуем просто удалить по ID
+      const db = await databaseService.getDatabase();
+      await db.runAsync('DELETE FROM tickets WHERE id = ?', [id]);
+    }
   }
 
   /**
