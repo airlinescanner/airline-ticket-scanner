@@ -33,7 +33,9 @@ export const ScannerScreen: React.FC = () => {
   
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isFocusing, setIsFocusing] = useState(false); // Новое состояние для автофокуса
   const [error, setError] = useState<string | null>(null);
+  const [exposure, setExposure] = useState(0);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
 
   React.useEffect(() => {
@@ -80,16 +82,47 @@ export const ScannerScreen: React.FC = () => {
 
   // Обработка захвата изображения
   const handleCapture = async () => {
-    if (!cameraRef.current || isProcessing || isCapturing) return;
+    if (!cameraRef.current || isProcessing || isCapturing || isFocusing) return;
 
     try {
-      setIsCapturing(true);
       setError(null);
+      
+      // 1. ПРИНУДИТЕЛЬНЫЙ ФОКУС ПЕРЕД СНИМКОМ
+      setIsFocusing(true);
+      console.log('[Scanner] Locking focus at center...');
+      
+      try {
+        // Проверяем, поддерживает ли устройство фокус
+        if (device?.supportsFocus) {
+          await cameraRef.current.focus({ x: 0.5, y: 0.5 });
+        } else {
+          console.log('[Scanner] Focus not supported on this device');
+        }
+      } catch (e) {
+        console.warn('[Scanner] Focus failed:', e);
+      }
+      
+      // Даем камере 1.5 секунды на стабилизацию
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setIsFocusing(false);
+      setIsCapturing(true);
 
-      // Захват фото
+      // 2. ПОНИЖЕНИЕ ЭКСПОЗИЦИИ (чтобы экран не бликовал)
+      console.log('[Scanner] Lowering exposure to avoid glare...');
+      setExposure(-1.0);
+      await new Promise(resolve => setTimeout(resolve, 200)); // Даем время примениться
+
+      // 3. ЗАХВАТ ФОТО
+      console.log('[Scanner] Taking photo now with best focus and exposure!');
       const photo = await cameraRef.current.takePhoto({
         enableShutterSound: true,
+        flash: 'off', // При съемке экрана вспышка - враг №1
       });
+      
+      // Возвращаем экспозицию в норму
+      setExposure(0);
+      
       setIsCapturing(false);
       setIsProcessing(true);
 
@@ -98,30 +131,20 @@ export const ScannerScreen: React.FC = () => {
       const ticketDataList = await scanCoordinator.coordinateScan(imageUri);
       
       // Переход на экран результата с распознанными данными
-      navigation.navigate('ScanResult', { 
-        ticketDataList: ticketDataList.length > 0 ? ticketDataList : [{
-          passengerName: null,
-          airlineName: null,
-          airlineCode: null,
-          flightNumber: null,
-          departureDate: null,
-          departureTime: null,
-          departureCity: null,
-          departureCountry: null,
-          departureAirport: null,
-          arrivalAirport: null,
-          arrivalCity: null,
-          arrivalCountry: null,
-          seat: null,
-          serviceClass: null,
-          bookingReference: null,
-          rawJson: '',
-        }]
-      });
-    } catch (err: unknown) {
+      const results = Array.isArray(ticketDataList) ? ticketDataList : [];
+      
+      if (results.length > 0) {
+        navigation.navigate('ScanResult', { 
+          ticketDataList: results
+        });
+      } else {
+        setError(t('scanner.errorProcessing', 'Не удалось распознать билет'));
+      }
+    } catch (err: any) {
       console.error('Scan error:', err);
-      setError(mapScanErrorToMessage(err));
+      setError(err?.message || 'Ошибка сканирования');
       setIsCapturing(false);
+      setIsFocusing(false);
     } finally {
       setIsProcessing(false);
     }
@@ -144,11 +167,6 @@ export const ScannerScreen: React.FC = () => {
   if (!hasPermission) {
     return (
       <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
-        <View style={styles.screenHeader}>
-          <Text style={[styles.screenTitle, { color: tokens.colors.text.primary }]}>
-            {t('scanner.title')}
-          </Text>
-        </View>
         <Card style={styles.permissionCard}>
           <Text style={[styles.permissionTitle, { color: tokens.colors.text.primary }]}>
             {t('scanner.permissionDenied')}
@@ -176,11 +194,6 @@ export const ScannerScreen: React.FC = () => {
   if (device == null) {
     return (
       <View style={[styles.container, { backgroundColor: tokens.colors.background.app }]}>
-        <View style={styles.screenHeader}>
-          <Text style={[styles.screenTitle, { color: tokens.colors.text.primary }]}>
-            {t('scanner.title')}
-          </Text>
-        </View>
         <Text style={[styles.text, { color: tokens.colors.text.primary }]}>
           {t('common.loading')}
         </Text>
@@ -195,13 +208,6 @@ export const ScannerScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Заголовок (поверх камеры) */}
-      <View style={styles.screenHeader}>
-        <Text style={[styles.screenTitle, { color: '#FFF' }]}>
-          {t('scanner.title')}
-        </Text>
-      </View>
-
       {/* Камера */}
       {isFocused && (
         <Camera
@@ -210,6 +216,11 @@ export const ScannerScreen: React.FC = () => {
           device={device}
           isActive={isCameraActive}
           photo={true}
+          enableHighQualityPhotos={true}
+          enableZoomGesture={true}
+          photoQualityBalance="quality"
+          enableAutoStabilization={true}
+          exposure={exposure}
         />
       )}
 
@@ -218,7 +229,19 @@ export const ScannerScreen: React.FC = () => {
 
       {/* Кнопка захвата */}
       <View style={styles.controls}>
-        {(isCapturing || isProcessing) && (
+        {isFocusing && (
+          <Card style={styles.processingCard}>
+            <ActivityIndicator size="small" color="#FFCC00" />
+            <Text style={[styles.processingTitle, { color: tokens.colors.text.primary }]}>
+              {t('scanner.focusing', 'Фокусування...')}
+            </Text>
+            <Text style={[styles.processingSubtitle, { color: tokens.colors.text.secondary }]}>
+              Шукаємо найкращу різкість
+            </Text>
+          </Card>
+        )}
+
+        {(isCapturing || isProcessing) && !isFocusing && (
           <Card style={styles.processingCard}>
             <ActivityIndicator size="small" color={tokens.colors.accent.primary} />
             <Text style={[styles.processingTitle, { color: tokens.colors.text.primary }]}>
@@ -249,11 +272,11 @@ export const ScannerScreen: React.FC = () => {
             styles.captureButton,
             { 
               backgroundColor: tokens.colors.button.primary.background,
-              opacity: isProcessing || isCapturing ? 0.5 : 1,
+              opacity: isProcessing || isCapturing || isFocusing ? 0.5 : 1,
             },
           ]}
           onPress={handleCapture}
-          disabled={isProcessing || isCapturing}
+          disabled={isProcessing || isCapturing || isFocusing}
         >
           <View
             style={[
@@ -279,18 +302,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#000',
-  },
-  screenHeader: {
-    position: 'absolute',
-    top: 12,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 20,
-    zIndex: 10,
-  },
-  screenTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
   },
   text: {
     fontSize: 18,
@@ -319,7 +330,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingBottom: 100, // Трохи нижче
+    paddingBottom: 155, // Еще выше для удобства
     paddingHorizontal: 16,
     alignItems: 'center',
   },
