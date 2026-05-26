@@ -15,6 +15,8 @@
             --accent-color: #3b82f6;
             --accent-gradient: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
             --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.05);
         }
 
         * {
@@ -32,8 +34,9 @@
             padding: 40px 20px;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
         }
 
         .container {
@@ -46,6 +49,45 @@
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             box-shadow: var(--shadow);
+            margin-top: 20px;
+        }
+
+        /* Language Switcher */
+        .language-switcher {
+            display: flex;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            padding: 6px;
+            border-radius: 16px;
+            gap: 4px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: var(--shadow);
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .lang-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .lang-btn.active {
+            color: #ffffff;
+            background: var(--accent-gradient);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         header {
@@ -144,6 +186,17 @@
             color: var(--text-secondary);
         }
 
+        /* Language-specific visibility */
+        .lang-content {
+            display: none;
+        }
+
+        body.lang-uk [lang-target="uk"] { display: block; }
+        body.lang-ru [lang-target="ru"] { display: block; }
+        body.lang-en [lang-target="en"] { display: block; }
+        body.lang-de [lang-target="de"] { display: block; }
+        body.lang-fr [lang-target="fr"] { display: block; }
+
         @media (max-width: 600px) {
             body {
                 padding: 20px 10px;
@@ -161,68 +214,388 @@
             h2 {
                 font-size: 18px;
             }
+
+            .language-switcher {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .lang-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <div class="logo-icon">✈️</div>
-            <h1>Privacy Policy</h1>
-            <p class="subtitle">Effective Date: May 26, 2026</p>
-        </header>
+<body class="lang-en">
 
-        <section class="highlight-box">
-            <p>This Privacy Policy describes how "Airline Ticket Scanner" ("we", "us", or "our") collects, uses, and shares information when you use our mobile application (the "App"). We prioritize the security of your data and apply a strict privacy-first architecture.</p>
-        </section>
-
-        <section>
-            <h2>1. Information We Collect and Process</h2>
-            <p>Our App is designed with an offline-first philosophy. Almost all of your ticket data processing and analysis happens locally on your physical device, ensuring complete privacy.</p>
-            <ul>
-                <li><strong>Camera Access:</strong> We request permission to access your device's camera. This permission is used solely to scan and capture images of flight tickets, boarding passes, or screens displaying ticket details for Optical Character Recognition (OCR). Image frames are processed locally in temporary memory and are never stored, uploaded, or shared with third parties.</li>
-                <li><strong>Ticket Data:</strong> When you successfully scan a ticket, we extract key flight details (such as Passenger Name, Flight Number, Airline Code, Departure/Arrival Airports, Seat, and Booking Reference/PNR). This data is stored strictly locally on your device in a secure offline SQLite database.</li>
-                <li><strong>Local Notifications:</strong> We use your device's notification system to send you push alerts when online check-in opens for your flights. This runs locally and does not use external push notification servers.</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2>2. Third-Party Services and AI Recognition</h2>
-            <p>To provide advanced text analysis and flight detail extraction, the App securely sends the raw recognized text (not photos) to third-party artificial intelligence providers (such as Google Gemini, Mistral AI, or Groq API) only when network connection is available.</p>
-            <ul>
-                <li><strong>Encryption:</strong> All transmissions are encrypted using standard Secure Socket Layer (SSL/HTTPS) protocols.</li>
-                <li><strong>Data Protection:</strong> The text sent to these APIs is used strictly for parsing. Under the developer agreements and enterprise terms of service with these providers, your data is not used to train AI models and is not stored permanently.</li>
-                <li><strong>Offline Fallback:</strong> If you do not have an internet connection, the App automatically falls back to an offline regular-expression parser. In this mode, no network requests are made, and your data remains 100% on-device.</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2>3. Data Retention and Deletion</h2>
-            <p>We do not own or maintain cloud servers to backup, store, or track your flight history. All your scanned tickets remain on your device.</p>
-            <ul>
-                <li><strong>User Control:</strong> You have full control over your data. You can delete individual tickets or clear your entire trip history at any time directly within the App's settings.</li>
-                <li><strong>App Deinstallation:</strong> Deleting the App from your device will permanently delete all stored ticket data and flight history from your device. This action is irreversible.</li>
-            </ul>
-        </section>
-
-        <section>
-            <h2>4. Backups</h2>
-            <p>The App allows you to create manual backups of your ticket database. These backup files are created locally on your device, and you are solely responsible for where you store, share, or upload them.</p>
-        </section>
-
-        <section>
-            <h2>5. Changes to This Privacy Policy</h2>
-            <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Effective Date" at the top of this document.</p>
-        </section>
-
-        <section>
-            <h2>6. Contact Us</h2>
-            <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at the email address provided in your App Store or Google Play developer credentials.</p>
-        </section>
-
-        <footer>
-            <p>&copy; 2026 Airline Ticket Scanner. All rights reserved.</p>
-        </footer>
+    <!-- Language Selector -->
+    <div class="language-switcher">
+        <button class="lang-btn" onclick="setLanguage('uk')">Українська</button>
+        <button class="lang-btn" onclick="setLanguage('ru')">Русский</button>
+        <button class="lang-btn active" onclick="setLanguage('en')">English</button>
+        <button class="lang-btn" onclick="setLanguage('de')">Deutsch</button>
+        <button class="lang-btn" onclick="setLanguage('fr')">Français</button>
     </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <!-- ==================== ENGLISH (EN) ==================== -->
+        <div class="lang-content" lang-target="en">
+            <header>
+                <div class="logo-icon">✈️</div>
+                <h1>Privacy Policy</h1>
+                <p class="subtitle">Effective Date: May 26, 2026</p>
+            </header>
+
+            <section class="highlight-box">
+                <p>This Privacy Policy describes how "Airline Ticket Scanner" ("we", "us", or "our") collects, uses, and shares information when you use our mobile application (the "App"). We prioritize the security of your data and apply a strict privacy-first architecture.</p>
+            </section>
+
+            <section>
+                <h2>1. Information We Collect and Process</h2>
+                <p>Our App is designed with an offline-first philosophy. Almost all of your ticket data processing and analysis happens locally on your physical device, ensuring complete privacy.</p>
+                <ul>
+                    <li><strong>Camera Access:</strong> We request permission to access your device's camera. This permission is used solely to scan and capture images of flight tickets, boarding passes, or screens displaying ticket details for Optical Character Recognition (OCR). Image frames are processed locally in temporary memory and are never stored, uploaded, or shared with third parties.</li>
+                    <li><strong>Ticket Data:</strong> When you successfully scan a ticket, we extract key flight details (such as Passenger Name, Flight Number, Airline Code, Departure/Arrival Airports, Seat, and Booking Reference/PNR). This data is stored strictly locally on your device in a secure offline SQLite database.</li>
+                    <li><strong>Local Notifications:</strong> We use your device's notification system to send you push alerts when online check-in opens for your flights. This runs locally and does not use external push notification servers.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>2. Third-Party Services and AI Recognition</h2>
+                <p>To provide advanced text analysis and flight detail extraction, the App securely sends the raw recognized text (not photos) to third-party artificial intelligence providers (such as Google Gemini, Mistral AI, or Groq API) only when network connection is available.</p>
+                <ul>
+                    <li><strong>Encryption:</strong> All transmissions are encrypted using standard Secure Socket Layer (SSL/HTTPS) protocols.</li>
+                    <li><strong>Data Protection:</strong> The text sent to these APIs is used strictly for parsing. Under the developer agreements and enterprise terms of service with these providers, your data is not used to train AI models and is not stored permanently.</li>
+                    <li><strong>Offline Fallback:</strong> If you do not have an internet connection, the App automatically falls back to an offline regular-expression parser. In this mode, no network requests are made, and your data remains 100% on-device.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>3. Data Retention and Deletion</h2>
+                <p>We do not own or maintain cloud servers to backup, store, or track your flight history. All your scanned tickets remain on your device.</p>
+                <ul>
+                    <li><strong>User Control:</strong> You have full control over your data. You can delete individual tickets or clear your entire trip history at any time directly within the App's settings.</li>
+                    <li><strong>App Deinstallation:</strong> Deleting the App from your device will permanently delete all stored ticket data and flight history from your device. This action is irreversible.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>4. Backups</h2>
+                <p>The App allows you to create manual backups of your ticket database. These backup files are created locally on your device, and you are solely responsible for where you store, share, or upload them.</p>
+            </section>
+
+            <section>
+                <h2>5. Changes to This Privacy Policy</h2>
+                <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Effective Date" at the top of this document.</p>
+            </section>
+
+            <section>
+                <h2>6. Contact Us</h2>
+                <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at the email address provided in your App Store or Google Play developer credentials.</p>
+            </section>
+
+            <footer>
+                <p>&copy; 2026 Airline Ticket Scanner. All rights reserved.</p>
+            </footer>
+        </div>
+
+        <!-- ==================== UKRAINIAN (UK) ==================== -->
+        <div class="lang-content" lang-target="uk">
+            <header>
+                <div class="logo-icon">✈️</div>
+                <h1>Політика конфіденційності</h1>
+                <p class="subtitle">Дата набрання чинності: 26 травня 2026 року</p>
+            </header>
+
+            <section class="highlight-box">
+                <p>Ця Політика конфіденційності описує, як додаток "Airline Ticket Scanner" ("ми", "нас" або "наш") збирає, використовує та поширює інформацію під час використання вами нашого мобільного додатка ("Додаток"). Ми приділяємо особливу увагу безпеці ваших даних і застосовуємо архітектуру, що ставить конфіденційність на перше місце (privacy-first).</p>
+            </section>
+
+            <section>
+                <h2>1. Інформація, яку ми збираємо та обробляємо</h2>
+                <p>Наш Додаток розроблено з філософією офлайн-доступу (offline-first). Майже вся обробка та аналіз даних ваших квитків відбувається локально на вашому пристрої, що гарантує повну конфіденційність.</p>
+                <ul>
+                    <li><strong>Доступ до камери:</strong> Ми запитуємо дозвіл на доступ до камери вашого пристрою. Цей дозвіл використовується виключно для сканування та розпізнавання тексту (OCR) на авіаквитках, посадкових талонах або екранах з деталями польоту. Зображення обробляються локально у тимчасовій пам'яті та ніколи не зберігаються, не завантажуються на сервери та не передаються третім особам.</li>
+                    <li><strong>Дані квитків:</strong> Після успішного сканування квитка ми вилучаємо ключові деталі рейсу (ім'я пасажира, номер рейсу, код авіакомпанії, аеропорти відправлення та прибуття, місце та код бронювання/PNR). Ці дані зберігаються виключно локально на вашому пристрої у захищеній офлайн-базі даних SQLite.</li>
+                    <li><strong>Локальні сповіщення:</strong> Ми використовуємо систему сповіщень вашого пристрою, щоб надсилати вам нагадування про відкриття онлайн-реєстрації на ваші рейси. Це працює локально та не задіює зовнішні сервери push-повідомлень.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>2. Сторонні сервіси та розпізнавання ШІ</h2>
+                <p>Для забезпечення розширеного аналізу тексту та точного вилучення деталей рейсів Додаток безпечно надсилає розпізнаний текст (не фотографії квитків) стороннім провайдерам штучного інтелекту (таким як Google Gemini, Mistral AI або Groq API) лише за наявності інтернет-з'єднання.</p>
+                <ul>
+                    <li><strong>Шифрування:</strong> Усі передачі даних шифруються за допомогою стандартних протоколів безпеки SSL/HTTPS.</li>
+                    <li><strong>Захист даних:</strong> Текст, що надсилається до цих API, використовується виключно для парсингу даних квитка. Згідно з угодами розробника та корпоративними умовами обслуговування цих провайдерів, ваші дані не використовуються для навчання моделей ШІ та не зберігаються на їхніх серверах на постійній основі.</li>
+                    <li><strong>Офлайн-режим:</strong> Якщо у вас немає інтернет-з'єднання, Додаток автоматично переходить на офлайн-парсер на основі регулярних виразів. У цьому режимі мережеві запити не надсилаються, і ваші дані на 100% залишаються на пристрої.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>3. Збереження та видалення даних</h2>
+                <p>Ми не володіємо та не підтримуємо хмарні сервери для резервного копіювання, зберігання або відстеження історії ваших польотів. Усі ваші відскановані квитки зберігаються тільки на вашому пристрої.</p>
+                <ul>
+                    <li><strong>Контроль користувача:</strong> Ви маєте повний контроль над своїми даними. Ви можете видалити окремі квитки або повністю очистити всю історію подорожей у будь-який час безпосередньо в налаштуваннях Додатка.</li>
+                    <li><strong>Видалення додатка:</strong> Видалення Додатка з вашого пристрою призведе до безповоротного видалення всіх збережених даних квитків та історії польотів. Цю дію неможливо скасувати.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>4. Резервні копії</h2>
+                <p>Додаток дозволяє створювати резервні копії бази даних квитків вручну. Ці файли створюються локально на вашому пристрої, і ви несете повну відповідальність за те, де ви їх зберігаєте, передаєте або завантажуєте.</p>
+            </section>
+
+            <section>
+                <h2>5. Зміни в Політиці конфіденційності</h2>
+                <p>Ми можемо періодично оновлювати нашу Політику конфіденційності. Ми повідомимо вас про будь-які зміни, опублікувавши нову версію на цій сторінці та оновивши дату набрання чинності у верхній частині документа.</p>
+            </section>
+
+            <section>
+                <h2>6. Контакти</h2>
+                <p>Якщо у вас виникли запитання або пропозиції щодо нашої Політики конфіденційності, будь ласка, зв'яжіться з нами за електронною адресою, вказаною в інформації про розробника в App Store або Google Play.</p>
+            </section>
+
+            <footer>
+                <p>&copy; 2026 Airline Ticket Scanner. Усі права захищені.</p>
+            </footer>
+        </div>
+
+        <!-- ==================== RUSSIAN (RU) ==================== -->
+        <div class="lang-content" lang-target="ru">
+            <header>
+                <div class="logo-icon">✈️</div>
+                <h1>Политика конфиденциальности</h1>
+                <p class="subtitle">Дата вступления в силу: 26 мая 2026 года</p>
+            </header>
+
+            <section class="highlight-box">
+                <p>Настоящая Политика конфиденциальности описывает, как приложение "Airline Ticket Scanner" ("мы", "нас" или "наш") собирает, использует и распространяет информацию при использовании вами нашего мобильного приложения ("Приложение"). Мы уделяем особое внимание безопасности ваших данных и применяем архитектуру, ставящую конфиденциальность на первое место (privacy-first).</p>
+            </section>
+
+            <section>
+                <h2>1. Информация, которую мы собираем и обрабатываем</h2>
+                <p>Наше Приложение разработано с философией офлайн-доступа (offline-first). Почти вся обработка и анализ данных ваших билетов происходит локально на вашем физическом устройстве, что гарантирует полную конфиденциальность.</p>
+                <ul>
+                    <li><strong>Доступ к камере:</strong> Мы запрашиваем разрешение на доступ к камере вашего устройства. Это разрешение используется исключительно для сканирования и распознавания текста (OCR) на авиабилетах, посадочных талонах или экранах с деталями полета. Изображения обрабатываются локально во временной памяти и никогда не сохраняются, не загружаются на серверы и не передаются третьим лицам.</li>
+                    <li><strong>Данные билетов:</strong> После успешного сканирования билета мы извлекаем ключевые детали рейса (имя пассажира, номер рейса, код авиакомпании, аэропорты отправления и прибытия, место и код бронирования/PNR). Эти данные хранятся исключительно локально на вашем устройстве в защищенной офлайн-базе данных SQLite.</li>
+                    <li><strong>Локальные уведомления:</strong> Мы используем систему уведомлений вашего устройства, чтобы отправлять вам напоминания об открытии онлайн-регистрации на ваши рейсы. Это работает локально и не задействует внешние серверы push-уведомлений.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>2. Сторонние сервисы и распознавание ИИ</h2>
+                <p>Для обеспечения расширенного анализа текста и точного извлечения деталей рейсов Приложение безопасно отправляет распознанный текст (не фотографии билетов) сторонним провайдерам искусственного интеллекта (таким как Google Gemini, Mistral AI или Groq API) только при наличии интернет-соединения.</p>
+                <ul>
+                    <li><strong>Шифрование:</strong> Все передачи данных шифруются с помощью стандартных протоколов безопасности SSL/HTTPS.</li>
+                    <li><strong>Защита данных:</strong> Текст, отправляемый в эти API, используется исключительно для парсинга данных билета. Согласно соглашениям разработчика и корпоративным условиям обслуживания этих провайдеров, ваши данные не используются для обучения моделей ИИ и не хранятся на их серверах на постоянной основе.</li>
+                    <li><strong>Офлайн-режим:</strong> Если у вас нет интернет-соединения, Приложение автоматически переходит на офлайн-парсер на основе регулярных выражений. В этом режиме сетевые запросы не отправляются, и ваши данные на 100% остаются на устройстве.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>3. Хранение и удаление данных</h2>
+                <p>Мы не владеем и не поддерживаем облачные серверы для резервного копирования, хранения или отслеживания истории ваших полетов. Все ваши отсканированные билеты хранятся только на вашем устройстве.</p>
+                <ul>
+                    <li><strong>Контроль пользователя:</strong> У вас есть полный контроль над своими данными. Вы можете удалить отдельные билеты или полностью очистить всю историю поездок в любое время непосредственно в настройках Приложения.</li>
+                    <li><strong>Удаление приложения:</strong> Удаление Приложения с вашего устройства приведет к безвозвратному удалению всех сохраненных данных билетов и истории полетов. Это действие невозможно отменить.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>4. Резервные копии</h2>
+                <p>Приложение позволяет создавать резервные копии базы данных билетов вручную. Эти файлы создаются локально на вашем устройстве, и вы несете полную ответственность за то, где вы их храните, передаете или загружаете.</p>
+            </section>
+
+            <section>
+                <h2>5. Изменения в Политике конфиденциальности</h2>
+                <p>Мы можем периодически обновлять нашу Политику конфиденциальности. Мы уведомим вас о любых изменениях, опубликовав новую версию на этой странице и обновив дату вступления в силу в верхней части документа.</p>
+            </section>
+
+            <section>
+                <h2>6. Контакты</h2>
+                <p>Если у вас возникли вопросы или предложения касательно нашей Политики конфиденциальности, пожалуйста, свяжитесь с нами по адресу электронной почты, указанному в информации о разработчике в App Store или Google Play.</p>
+            </section>
+
+            <footer>
+                <p>&copy; 2026 Airline Ticket Scanner. Все права защищены.</p>
+            </footer>
+        </div>
+
+        <!-- ==================== GERMAN (DE) ==================== -->
+        <div class="lang-content" lang-target="de">
+            <header>
+                <div class="logo-icon">✈️</div>
+                <h1>Datenschutzerklärung</h1>
+                <p class="subtitle">Inkrafttretensdatum: 26. Mai 2026</p>
+            </header>
+
+            <section class="highlight-box">
+                <p>Diese Datenschutzerklärung beschreibt, wie die Anwendung „Airline Ticket Scanner“ („wir“, „uns“ oder „unser“) Informationen sammelt, verwendet und weitergibt, wenn Sie unsere mobile Anwendung (die „App“) nutzen. Wir legen größten Wert auf die Sicherheit Ihrer Daten und setzen auf eine Architektur, bei der der Datenschutz an erster Stelle steht (Privacy-First).</p>
+            </section>
+
+            <section>
+                <h2>1. Informationen, die wir sammeln und verarbeiten</h2>
+                <p>Unsere App basiert auf einer Offline-First-Philosophie. Fast die gesamte Verarbeitung und Analyse Ihrer Ticketdaten erfolgt lokal auf Ihrem physischen Gerät, was absolute Privatsphäre garantiert.</p>
+                <ul>
+                    <li><strong>Kamerazugriff:</strong> Wir bitten um Erlaubnis, auf die Kamera Ihres Geräts zuzugreifen. Diese Berechtigung wird ausschließlich zum Scannen und Erfassen von Bildern von Flugtickets, Bordkarten oder Bildschirmen mit Flugdetails für die optische Zeichenerkennung (OCR) verwendet. Bilder werden lokal im temporären Speicher verarbeitet und niemals auf Server hochgeladen, gespeichert oder an Dritte weitergegeben.</li>
+                    <li><strong>Ticketdaten:</strong> Wenn Sie ein Ticket erfolgreich scannen, extrahieren wir wichtige Flugdaten (wie Passagiername, Flugnummer, Airline-Code, Abflug-/Ankunftsflughäfen, Sitzplatz und Buchungscode/PNR). Diese Daten werden ausschließlich lokal auf Ihrem Gerät in einer sicheren Offline-Datenbank (SQLite) gespeichert.</li>
+                    <li><strong>Lokale Benachrichtigungen:</strong> Wir nutzen das Benachrichtigungssystem Ihres Geräts, um Ihnen Erinnerungen zu senden, wenn der Online-Check-in für Ihre Flüge geöffnet wird. Dies läuft vollständig lokal ab und nutzt keine externen Server für Push-Benachrichtigungen.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>2. Drittanbieter-Dienste und KI-Erkennung</h2>
+                <p>Um eine erweiterte Textanalyse und präzise Extraktion von Flugdetails zu gewährleisten, sendet die App den erkannten Text (keine Fotos der Tickets) nur bei aktiver Internetverbindung sicher an Drittanbieter von künstlicher Intelligenz (wie Google Gemini, Mistral AI oder die Groq-API).</p>
+                <ul>
+                    <li><strong>Verschlüsselung:</strong> Alle Übertragungen werden mit Standard-Sicherheitsprotokollen (SSL/HTTPS) verschlüsselt.</li>
+                    <li><strong>Datenschutz:</strong> Der an diese APIs gesendete Text wird ausschließlich zur Analyse der Ticketdaten verwendet. Gemäß den Entwicklervereinbarungen und Unternehmensbedingungen dieser Anbieter werden Ihre Daten nicht zum Trainieren von KI-Modellen verwendet und nicht dauerhaft auf deren Servern gespeichert.</li>
+                    <li><strong>Offline-Modus:</strong> Wenn Sie keine Internetverbindung haben, greift die App automatisch auf einen Offline-Parser zurück, der auf regulären Ausdrücken basiert. In diesem Modus werden keine Netzwerkanfragen gesendet und Ihre Daten verbleiben zu 100 % auf dem Gerät.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>3. Datenspeicherung und -löschung</h2>
+                <p>Wir besitzen oder unterhalten keine Cloud-Server, um Ihren Flugverlauf zu sichern, zu speichern oder zu verfolgen. Alle Ihre gescannten Tickets verbleiben auf Ihrem Gerät.</p>
+                <ul>
+                    <li><strong>Benutzerkontrolle:</strong> Sie haben die volle Kontrolle über Ihre Daten. Sie können einzelne Tickets löschen oder Ihren gesamten Reiseverlauf jederzeit direkt in den App-Einstellungen löschen.</li>
+                    <li><strong>App-Deinstallation:</strong> Das Löschen der App von Ihrem Gerät führt zum dauerhaften und unwiderruflichen Löschen aller gespeicherten Ticketdaten und des Flugverlaufs auf Ihrem Gerät. Dieser Schritt kann nicht rückgängig gemacht werden.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>4. Backups</h2>
+                <p>Die App ermöglicht es Ihnen, manuell Backups Ihrer Ticket-Datenbank zu erstellen. Diese Backup-Dateien werden lokal auf Ihrem Gerät erstellt. Sie sind allein dafür verantwortlich, wo Sie diese speichern, teilen oder hochladen.</p>
+            </section>
+
+            <section>
+                <h2>5. Änderungen dieser Datenschutzerklärung</h2>
+                <p>Wir können unsere Datenschutzerklärung von Zeit zu Zeit aktualisieren. Wir werden Sie über Änderungen informieren, indem wir die neue Datenschutzerklärung auf dieser Seite veröffentlichen und das „Inkrafttretensdatum“ oben auf dieser Seite aktualisieren.</p>
+            </section>
+
+            <section>
+                <h2>6. Kontakt</h2>
+                <p>Wenn Sie Fragen oder Anregungen zu unserer Datenschutzerklärung haben, zögern Sie nicht, uns unter der E-Mail-Adresse zu kontaktieren, die in Ihren App Store- oder Google Play-Entwicklerdaten hinterlegt ist.</p>
+            </section>
+
+            <footer>
+                <p>&copy; 2026 Airline Ticket Scanner. Alle Rechte vorbehalten.</p>
+            </footer>
+        </div>
+
+        <!-- ==================== FRENCH (FR) ==================== -->
+        <div class="lang-content" lang-target="fr">
+            <header>
+                <div class="logo-icon">✈️</div>
+                <h1>Politique de confidentialité</h1>
+                <p class="subtitle">Date d'entrée en vigueur : 26 mai 2026</p>
+            </header>
+
+            <section class="highlight-box">
+                <p>Cette politique de confidentialité décrit comment l'application "Airline Ticket Scanner" ("nous", "notre" ou "nos") collecte, utilise et partage des informations lorsque vous utilisez notre application mobile (l'"Application"). Nous accordons une priorité absolue à la sécurité de vos données et appliquons une architecture axée sur la confidentialité (privacy-first).</p>
+            </section>
+
+            <section>
+                <h2>1. Informations que nous collectons et traitons</h2>
+                <p>Notre Application est conçue selon une philosophie hors ligne (offline-first). Presque tout le traitement et l'analyse de vos données de billets s'effectuent localement sur votre appareil physique, garantissant ainsi une confidentialité totale.</p>
+                <ul>
+                    <li><strong>Accès à la caméra :</strong> Nous demandons l'autorisation d'accéder à la caméra de votre appareil. Cette autorisation est utilisée uniquement pour scanner et capturer des images de billets d'avion, de cartes d'embarquement ou d'écrans affichant les détails du vol pour la reconnaissance optique de caractères (OCR). Les images sont traitées localement dans la mémoire temporaire et ne sont jamais stockées, téléchargées sur des serveurs ou partagées avec des tiers.</li>
+                    <li><strong>Données de billets :</strong> Une fois le billet scanné avec succès, nous extrayons les détails clés du vol (tels que le nom du passager, le numéro de vol, le code de la compagnie aérienne, les aéroports de départ/d'arrivée, le siège et la référence de réservation/PNR). Ces données sont stockées uniquement sur votre appareil dans une base de données SQLite hors ligne sécurisée.</li>
+                    <li><strong>Notifications locales :</strong> Nous utilisons le système de notification de votre appareil pour vous envoyer des alertes locales lorsque l'enregistrement en ligne est ouvert pour vos vols. Cela fonctionne localement et n'utilise pas de serveurs de notifications push externes.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>2. Services tiers et reconnaissance par IA</h2>
+                <p>Pour fournir une analyse de texte avancée et une extraction précise des détails des vols, l'Application envoie en toute sécurité le texte reconnu (pas de photos des billets) à des fournisseurs tiers d'intelligence artificielle (tels que Google Gemini, Mistral AI ou Groq API) uniquement lorsqu'une connexion Internet est disponible.</p>
+                <ul>
+                    <li><strong>Chiffrement :</strong> Toutes les transmissions sont chiffrées à l'aide de protocoles de sécurité standard SSL/HTTPS.</li>
+                    <li><strong>Protection des données :</strong> Le texte envoyé à ces API est utilisé exclusivement pour analyser le billet. Conformément aux contrats de développement et aux conditions d'utilisation de ces fournisseurs, vos données ne sont pas utilisées pour entraîner des modèles d'IA et ne sont pas stockées de manière permanente sur leurs serveurs.</li>
+                    <li><strong>Mode hors ligne :</strong> Si vous n'avez pas de connexion Internet, l'Application utilise automatiquement un analyseur hors ligne basé sur des expressions régulières. Dans ce mode, aucune requête réseau n'est effectuée et vos données restent à 100 % sur l'appareil.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>3. Conservation et suppression des données</h2>
+                <p>We ne possédons ni ne gérons de serveurs cloud pour sauvegarder, stocker ou suivre l'historique de vos vols. Tous vos billets scannés restent sur votre appareil.</p>
+                <ul>
+                    <li><strong>Contrôle de l'utilisateur :</strong> Vous avez un contrôle total sur vos données. Vous pouvez supprimer des billets individuels ou effacer tout l'historique de vos voyages à tout moment directement dans les paramètres de l'Application.</li>
+                    <li><strong>Désinstallation de l'application :</strong> La suppression de l'Application de votre appareil supprimera définitivement toutes les données de billets et l'historique des vols stockés sur votre appareil. Cette action est irréversible.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>4. Sauvegardes</h2>
+                <p>L'Application vous permet de créer manuellement des sauvegardes de votre base de données de billets. Ces fichiers de sauvegarde sont créés localement sur votre appareil, et vous êtes seul responsable de l'endroit où vous les stockez, les partagez ou les téléchargez.</p>
+            </section>
+
+            <section>
+                <h2>5. Modifications de cette politique de confidentialité</h2>
+                <p>Nous pouvons mettre à jour notre politique de confidentialité de temps à autre. Nous vous informerons de tout changement en publiant la nouvelle politique de confidentialité sur cette page et en mettant à jour la "Date d'entrée en vigueur" en haut de ce document.</p>
+            </section>
+
+            <section>
+                <h2>6. Contactez-nous</h2>
+                <p>Si vous avez des questions ou des suggestions concernant notre politique de confidentialité, n'hésitez pas à nous contacter à l'adresse e-mail fournie dans vos identifiants de développeur App Store ou Google Play.</p>
+            </section>
+
+            <footer>
+                <p>&copy; 2026 Airline Ticket Scanner. Tous droits réservés.</p>
+            </footer>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT FOR AUTO-DETECTION AND TAB SWITCHING -->
+    <script>
+        const languages = ['uk', 'ru', 'en', 'de', 'fr'];
+        
+        function setLanguage(lang) {
+            if (!languages.includes(lang)) lang = 'en';
+            
+            // Save selection to localStorage
+            localStorage.setItem('preferred-lang', lang);
+            
+            // Update body class for styling/visibility
+            document.body.className = 'lang-' + lang;
+            
+            // Update active state in switcher buttons
+            const buttons = document.querySelectorAll('.lang-btn');
+            buttons.forEach(btn => {
+                const onClickStr = btn.getAttribute('onclick');
+                if (onClickStr && onClickStr.includes(`'${lang}'`)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Auto-detect language on load
+        window.addEventListener('DOMContentLoaded', () => {
+            let selectedLang = localStorage.getItem('preferred-lang');
+            
+            if (!selectedLang) {
+                // Read browser languages
+                const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+                
+                if (browserLang.startsWith('uk')) {
+                    selectedLang = 'uk';
+                } else if (browserLang.startsWith('ru') || browserLang.startsWith('be') || browserLang.startsWith('kk') || browserLang.startsWith('ky')) {
+                    selectedLang = 'ru';
+                } else if (browserLang.startsWith('de')) {
+                    selectedLang = 'de';
+                } else if (browserLang.startsWith('fr')) {
+                    selectedLang = 'fr';
+                } else {
+                    selectedLang = 'en';
+                }
+            }
+            
+            setLanguage(selectedLang);
+        });
+    </script>
 </body>
 </html>
