@@ -162,6 +162,7 @@
   "settings": {
     "title": "Paramètres",
     "tab": "Paramètres",
+    "privacyPolicy": "Politique de confidentialité",
     "theme": "Thème",
     "language": "Langue de l'interface",
     "chooseTheme": "Choisir le thème",

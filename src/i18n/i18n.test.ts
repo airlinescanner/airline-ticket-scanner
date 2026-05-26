@@ -60,6 +60,7 @@ describe('i18n Configuration', () => {
     expect(i18n.t('demo.dark')).toBe('Темна');
     expect(i18n.t('ticket.customTime')).toBe('Зручний час');
     expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('За вашим часом: 12:00');
+    expect(i18n.t('settings.privacyPolicy')).toBe('Політика конфіденційності');
   });
 
   it('должен корректно переводить ключи на русском', () => {
@@ -69,6 +70,7 @@ describe('i18n Configuration', () => {
     expect(i18n.t('demo.dark')).toBe('Тёмная');
     expect(i18n.t('ticket.customTime')).toBe('Удобное время');
     expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('По вашему времени: 12:00');
+    expect(i18n.t('settings.privacyPolicy')).toBe('Политика конфиденциальности');
   });
 
   it('должен корректно переводить ключи на английском', () => {
@@ -77,6 +79,7 @@ describe('i18n Configuration', () => {
     expect(i18n.t('demo.light')).toBe('Light');
     expect(i18n.t('ticket.customTime')).toBe('Reminder time');
     expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('Your time: 12:00');
+    expect(i18n.t('settings.privacyPolicy')).toBe('Privacy Policy');
   });
 
   it('должен корректно переводить ключи на немецком', () => {
@@ -85,6 +88,7 @@ describe('i18n Configuration', () => {
     expect(i18n.t('demo.light')).toBe('Hell');
     expect(i18n.t('ticket.customTime')).toBe('Erinnerungszeit');
     expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('Ihre Zeit: 12:00');
+    expect(i18n.t('settings.privacyPolicy')).toBe('Datenschutzerklärung');
   });
 
   it('должен корректно переводить ключи на французском', () => {
@@ -93,6 +97,7 @@ describe('i18n Configuration', () => {
     expect(i18n.t('demo.light')).toBe('Clair');
     expect(i18n.t('ticket.customTime')).toBe("Heure d'alerte");
     expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('Votre heure : 12:00');
+    expect(i18n.t('settings.privacyPolicy')).toBe('Politique de confidentialité');
   });
 
   it('должен поддерживать интерполяцию', () => {

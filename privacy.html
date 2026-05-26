@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Airline Ticket Scanner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-color: #3b82f6;
+            --accent-gradient: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--shadow);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 24px;
+        }
+
+        .logo-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: inline-block;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        section {
+            margin-bottom: 32px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            border-left: 4px solid var(--accent-color);
+            padding-left: 12px;
+        }
+
+        p {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-align: justify;
+        }
+
+        ul {
+            list-style: none;
+            margin-bottom: 20px;
+            padding-left: 4px;
+        }
+
+        li {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 24px;
+        }
+
+        li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .highlight-box {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .highlight-box p {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--card-border);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 10px;
+            }
+
+            .container {
+                padding: 24px 20px;
+                border-radius: 16px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            h2 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-icon">✈️</div>
+            <h1>Privacy Policy</h1>
+            <p class="subtitle">Effective Date: May 26, 2026</p>
+        </header>
+
+        <section class="highlight-box">
+            <p>This Privacy Policy describes how "Airline Ticket Scanner" ("we", "us", or "our") collects, uses, and shares information when you use our mobile application (the "App"). We prioritize the security of your data and apply a strict privacy-first architecture.</p>
+        </section>
+
+        <section>
+            <h2>1. Information We Collect and Process</h2>
+            <p>Our App is designed with an offline-first philosophy. Almost all of your ticket data processing and analysis happens locally on your physical device, ensuring complete privacy.</p>
+            <ul>
+                <li><strong>Camera Access:</strong> We request permission to access your device's camera. This permission is used solely to scan and capture images of flight tickets, boarding passes, or screens displaying ticket details for Optical Character Recognition (OCR). Image frames are processed locally in temporary memory and are never stored, uploaded, or shared with third parties.</li>
+                <li><strong>Ticket Data:</strong> When you successfully scan a ticket, we extract key flight details (such as Passenger Name, Flight Number, Airline Code, Departure/Arrival Airports, Seat, and Booking Reference/PNR). This data is stored strictly locally on your device in a secure offline SQLite database.</li>
+                <li><strong>Local Notifications:</strong> We use your device's notification system to send you push alerts when online check-in opens for your flights. This runs locally and does not use external push notification servers.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>2. Third-Party Services and AI Recognition</h2>
+            <p>To provide advanced text analysis and flight detail extraction, the App securely sends the raw recognized text (not photos) to third-party artificial intelligence providers (such as Google Gemini, Mistral AI, or Groq API) only when network connection is available.</p>
+            <ul>
+                <li><strong>Encryption:</strong> All transmissions are encrypted using standard Secure Socket Layer (SSL/HTTPS) protocols.</li>
+                <li><strong>Data Protection:</strong> The text sent to these APIs is used strictly for parsing. Under the developer agreements and enterprise terms of service with these providers, your data is not used to train AI models and is not stored permanently.</li>
+                <li><strong>Offline Fallback:</strong> If you do not have an internet connection, the App automatically falls back to an offline regular-expression parser. In this mode, no network requests are made, and your data remains 100% on-device.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>3. Data Retention and Deletion</h2>
+            <p>We do not own or maintain cloud servers to backup, store, or track your flight history. All your scanned tickets remain on your device.</p>
+            <ul>
+                <li><strong>User Control:</strong> You have full control over your data. You can delete individual tickets or clear your entire trip history at any time directly within the App's settings.</li>
+                <li><strong>App Deinstallation:</strong> Deleting the App from your device will permanently delete all stored ticket data and flight history from your device. This action is irreversible.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>4. Backups</h2>
+            <p>The App allows you to create manual backups of your ticket database. These backup files are created locally on your device, and you are solely responsible for where you store, share, or upload them.</p>
+        </section>
+
+        <section>
+            <h2>5. Changes to This Privacy Policy</h2>
+            <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Effective Date" at the top of this document.</p>
+        </section>
+
+        <section>
+            <h2>6. Contact Us</h2>
+            <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at the email address provided in your App Store or Google Play developer credentials.</p>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Airline Ticket Scanner. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

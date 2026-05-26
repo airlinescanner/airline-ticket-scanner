@@ -162,6 +162,7 @@
   "settings": {
     "title": "Settings",
     "tab": "Settings",
+    "privacyPolicy": "Privacy Policy",
     "theme": "Theme",
     "language": "Interface Language",
     "chooseTheme": "Choose theme",

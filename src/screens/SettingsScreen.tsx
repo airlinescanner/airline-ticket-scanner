@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
 import { useTranslation } from 'react-i18next';
@@ -236,6 +236,26 @@ export const SettingsScreen: React.FC = () => {
               <Ionicons name="book-outline" size={22} color={tokens.colors.accent.primary} />
               <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
                 {t('settings.howToUseTitle')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />
+          </TouchableOpacity>
+        </Card>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
+          {t('settings.privacyPolicy').toUpperCase()}
+        </Text>
+        <Card style={styles.card}>
+          <TouchableOpacity 
+            style={styles.item} 
+            onPress={() => Linking.openURL('https://airlinescanner.github.io/airline-ticket-scanner/privacy.html')}
+          >
+            <View style={styles.itemContent}>
+              <Ionicons name="shield-checkmark-outline" size={22} color={tokens.colors.accent.primary} />
+              <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
+                {t('settings.privacyPolicy')}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />

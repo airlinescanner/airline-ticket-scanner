@@ -162,6 +162,7 @@
   "settings": {
     "title": "Einstellungen",
     "tab": "Einstellungen",
+    "privacyPolicy": "Datenschutzerklärung",
     "theme": "Thema",
     "language": "Schnittstellensprache",
     "chooseTheme": "Thema wählen",
