@@ -182,44 +182,6 @@ export const SettingsScreen: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
-          {t('settings.theme').toUpperCase()}
-        </Text>
-        <Card style={styles.card}>
-          <TouchableOpacity style={styles.item} onPress={openThemeSelection}>
-            <View style={styles.itemContent}>
-              <Ionicons 
-                name={mode === 'light' ? 'sunny-outline' : mode === 'dark' ? 'moon-outline' : 'settings-outline'} 
-                size={22} 
-                color={tokens.colors.text.secondary} 
-              />
-              <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
-                {getThemeLabel(mode)}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />
-          </TouchableOpacity>
-        </Card>
-      </View>
- 
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
-          {t('settings.language').toUpperCase()}
-        </Text>
-        <Card style={styles.card}>
-          <TouchableOpacity style={styles.item} onPress={openLanguageSelection}>
-            <View style={styles.itemContent}>
-              <Ionicons name="language-outline" size={22} color={tokens.colors.text.secondary} />
-              <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
-                {getLanguageLabel(i18n.language)}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />
-          </TouchableOpacity>
-        </Card>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
           {t('settings.howToUse').toUpperCase()}
         </Text>
         <Card style={styles.card}>
@@ -256,6 +218,44 @@ export const SettingsScreen: React.FC = () => {
               <Ionicons name="shield-checkmark-outline" size={22} color={tokens.colors.accent.primary} />
               <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
                 {t('settings.privacyPolicy')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />
+          </TouchableOpacity>
+        </Card>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
+          {t('settings.theme').toUpperCase()}
+        </Text>
+        <Card style={styles.card}>
+          <TouchableOpacity style={styles.item} onPress={openThemeSelection}>
+            <View style={styles.itemContent}>
+              <Ionicons 
+                name={mode === 'light' ? 'sunny-outline' : mode === 'dark' ? 'moon-outline' : 'settings-outline'} 
+                size={22} 
+                color={tokens.colors.text.secondary} 
+              />
+              <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
+                {getThemeLabel(mode)}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />
+          </TouchableOpacity>
+        </Card>
+      </View>
+ 
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
+          {t('settings.language').toUpperCase()}
+        </Text>
+        <Card style={styles.card}>
+          <TouchableOpacity style={styles.item} onPress={openLanguageSelection}>
+            <View style={styles.itemContent}>
+              <Ionicons name="language-outline" size={22} color={tokens.colors.text.secondary} />
+              <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
+                {getLanguageLabel(i18n.language)}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />
