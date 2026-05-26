@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share } from 'react-native';
+import { DateTime } from 'luxon';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Clipboard, Vibration, Linking } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -102,6 +103,17 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
+  const handleCopyToClipboard = (text: string | undefined, label: string) => {
+    if (!text) return;
+    Clipboard.setString(text);
+    Vibration.vibrate(50);
+    showAlert({
+      title: t('common.copied') || 'Скопировано!',
+      message: `${label}: ${text}`,
+      type: 'success'
+    });
+  };
+
   const handleDelete = () => {
     showAlert({
       title: t('common.delete'),
@@ -149,12 +161,22 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       </View>
 
       <Card style={styles.mainCard}>
-        <View style={styles.passengerRow}>
+        <TouchableOpacity 
+          style={styles.passengerRow} 
+          onPress={() => handleCopyToClipboard(ticket.passengerName, 'Имя пассажира')}
+          activeOpacity={0.7}
+        >
           <Ionicons name="person-circle-outline" size={24} color={tokens.colors.accent.primary} />
           <Text style={[styles.passengerName, { color: tokens.colors.text.primary }]}>
             {ticket.passengerName}
           </Text>
-        </View>
+          <Ionicons 
+            name="copy-outline" 
+            size={16} 
+            color={tokens.colors.text.secondary} 
+            style={{ marginLeft: 8 }} 
+          />
+        </TouchableOpacity>
 
         <View style={styles.routeContainer}>
           <View style={styles.airportBlock}>
@@ -178,21 +200,56 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
           </View>
           <View style={styles.detailItem}>
             <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>{t('ticket.departureTime').toUpperCase()}</Text>
-            <Text style={[styles.detailValue, { color: tokens.colors.text.primary }]}>{ticket.departureTime}</Text>
+            <Text style={[styles.detailValue, { color: tokens.colors.text.primary }]}>{ticket.departureTime?.replace(':', '.')}</Text>
           </View>
-          <View style={styles.detailItem}>
+          <TouchableOpacity 
+            style={styles.detailItem}
+            onPress={() => handleCopyToClipboard(ticket.bookingReference, 'PNR (Код бронирования)')}
+            activeOpacity={0.7}
+            disabled={!ticket.bookingReference}
+          >
             <Text style={[styles.detailLabel, { color: tokens.colors.text.secondary }]}>PNR</Text>
-            <Text style={[styles.detailValue, { color: tokens.colors.status.success }]}>{ticket.bookingReference || '—'}</Text>
-          </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+              <Text style={[styles.detailValue, { color: tokens.colors.status.success, marginTop: 0 }]}>
+                {ticket.bookingReference || '—'}
+              </Text>
+              {ticket.bookingReference ? (
+                <Ionicons 
+                  name="copy-outline" 
+                  size={14} 
+                  color={tokens.colors.status.success} 
+                  style={{ marginLeft: 6 }} 
+                />
+              ) : null}
+            </View>
+          </TouchableOpacity>
         </View>
       </Card>
 
       <Card style={styles.registrationCard}>
         <View style={styles.regHeader}>
-          <Ionicons name="time-outline" size={20} color={tokens.colors.accent.primary} />
-          <Text style={[styles.regTitle, { color: tokens.colors.text.primary }]}>
-            {t('registration.online_registration')}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="time-outline" size={20} color={tokens.colors.accent.primary} />
+            <Text style={[styles.regTitle, { color: tokens.colors.text.primary }]}>
+              {t('registration.online_registration')}
+            </Text>
+          </View>
+          {regInfo?.airline?.id ? (
+            <TouchableOpacity
+              style={styles.airlineDetailButton}
+              onPress={() => navigation.navigate('AirlineDetail', { airlineId: regInfo.airline.id })}
+              activeOpacity={0.7}
+            >
+              <Text 
+                style={[styles.airlineDetailText, { color: tokens.colors.accent.primary }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {regInfo.airline.name}
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color={tokens.colors.accent.primary} style={{ marginLeft: 2 }} />
+            </TouchableOpacity>
+          ) : null}
         </View>
         
         {regInfo ? (
@@ -203,32 +260,86 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={[styles.timezoneNote, { color: tokens.colors.text.secondary }]}>
               {t('registration.localTimeIn', { city: ticket.departureCity || 'departure city' })}
             </Text>
+            <Text style={[styles.timezoneNote, { color: tokens.colors.text.secondary, marginTop: 4, fontWeight: 'bold' }]}>
+              (По Киеву: {DateTime.fromJSDate(regInfo.registrationOpensAt).setZone('Europe/Kyiv').toFormat('dd.MM.yyyy HH:mm')})
+            </Text>
             
             <View style={[styles.countdownContainer, { backgroundColor: tokens.colors.background.card }]}>
-              <Text style={[styles.countdownText, { color: tokens.colors.accent.primary }]}>
+              <Text style={[
+                styles.countdownText, 
+                { 
+                  color: tokens.colors.status.error 
+                }
+              ]}>
                 {timeUntil}
               </Text>
             </View>
 
-            <TouchableOpacity 
-              style={[
-                styles.notificationToggle, 
-                { backgroundColor: ticket.notificationEnabled ? tokens.colors.accent.primary : tokens.colors.background.card }
-              ]}
-              onPress={handleToggleNotification}
-            >
-              <Ionicons 
-                name={ticket.notificationEnabled ? "notifications" : "notifications-outline"} 
-                size={20} 
-                color={ticket.notificationEnabled ? "#FFFFFF" : tokens.colors.text.primary} 
-              />
-              <Text style={[
-                styles.notificationToggleText, 
-                { color: ticket.notificationEnabled ? "#FFFFFF" : tokens.colors.text.primary }
-              ]}>
-                {ticket.notificationEnabled ? t('notification.active_button') : t('notification.enable_button')}
-              </Text>
-            </TouchableOpacity>
+            {regInfo.registrationOpensAt.getTime() < Date.now() ? (
+              <TouchableOpacity 
+                style={[
+                  styles.notificationToggle, 
+                  { backgroundColor: tokens.colors.accent.primary }
+                ]}
+                onPress={async () => {
+                  const url = regInfo.airline?.registrationUrl;
+                  if (url) {
+                    try {
+                      const supported = await Linking.canOpenURL(url);
+                      if (supported) {
+                        await Linking.openURL(url);
+                      } else {
+                        showAlert({
+                          title: t('common.error'),
+                          message: `Unsupported URL: ${url}`,
+                          type: 'error'
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Error opening URL:', error);
+                    }
+                  } else {
+                    showAlert({
+                      title: t('common.error'),
+                      message: 'Ссылка на сайт регистрации авиакомпании отсутствует.',
+                      type: 'warning'
+                    });
+                  }
+                }}
+              >
+                <Ionicons 
+                  name="airplane-outline" 
+                  size={20} 
+                  color="#FFFFFF" 
+                />
+                <Text style={[
+                  styles.notificationToggleText, 
+                  { color: "#FFFFFF" }
+                ]}>
+                  {t('airline.openWebsite')}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={[
+                  styles.notificationToggle, 
+                  { backgroundColor: ticket.notificationEnabled ? tokens.colors.accent.primary : tokens.colors.background.card }
+                ]}
+                onPress={handleToggleNotification}
+              >
+                <Ionicons 
+                  name={ticket.notificationEnabled ? "notifications" : "notifications-outline"} 
+                  size={20} 
+                  color={ticket.notificationEnabled ? "#FFFFFF" : tokens.colors.text.primary} 
+                />
+                <Text style={[
+                  styles.notificationToggleText, 
+                  { color: ticket.notificationEnabled ? "#FFFFFF" : tokens.colors.text.primary }
+                ]}>
+                  {ticket.notificationEnabled ? t('notification.active_button') : t('notification.enable_button')}
+                </Text>
+              </TouchableOpacity>
+            )}
           </>
         ) : (
           <Text style={{ color: tokens.colors.text.secondary }}>
@@ -277,12 +388,14 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 10, fontWeight: 'bold', marginBottom: 4 },
   detailValue: { fontSize: 14, fontWeight: '600' },
   registrationCard: { padding: 20, marginBottom: 24 },
-  regHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  regHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   regTitle: { fontSize: 14, fontWeight: 'bold', marginLeft: 8 },
+  airlineDetailButton: { flexDirection: 'row', alignItems: 'center', maxWidth: '50%' },
+  airlineDetailText: { fontSize: 12, fontWeight: 'bold' },
   regOpensAt: { fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
   timezoneNote: { fontSize: 12, marginBottom: 16, fontStyle: 'italic' },
   countdownContainer: { padding: 12, borderRadius: 8, alignItems: 'center', marginBottom: 20 },
-  countdownText: { fontSize: 16, fontWeight: 'bold' },
+  countdownText: { fontSize: 18, fontWeight: 'bold' },
   notificationToggle: { 
     flexDirection: 'row', 
     alignItems: 'center', 

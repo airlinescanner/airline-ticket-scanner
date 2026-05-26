@@ -36,7 +36,8 @@
     "success": "Success",
     "retry": "Retry",
     "letters_2": "(2 letters)",
-    "letters_3": "(3 letters)"
+    "letters_3": "(3 letters)",
+    "copied": "Copied!"
   },
   "theme": {
     "light": "Light",

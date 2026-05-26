@@ -28,10 +28,10 @@ interface ThemeProviderProps {
  */
 export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Element {
   // Текущий режим темы (light/dark/system)
-  const [mode, setModeState] = useState<ThemeMode>('light');
+  const [mode, setModeState] = useState<ThemeMode>('dark');
   
   // Разрешенная тема (light или dark) — результат применения режима 'system'
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
 
   /**
    * Определяет разрешенную тему на основе режима и системной темы
@@ -99,15 +99,15 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
           setModeState(savedMode as ThemeMode);
           setResolvedTheme(resolveTheme(savedMode as ThemeMode, systemTheme));
         } else {
-          // Требование 8.6: светлая тема по умолчанию
-          setModeState('light');
-          setResolvedTheme('light');
+          // Требование 8.6: темная тема по умолчанию
+          setModeState('dark');
+          setResolvedTheme('dark');
         }
       } catch (error) {
         console.error('Ошибка загрузки темы:', error);
-        // При ошибке применяем светлую тему по умолчанию
-        setModeState('light');
-        setResolvedTheme('light');
+        // При ошибке применяем темную тему по умолчанию
+        setModeState('dark');
+        setResolvedTheme('dark');
       }
     };
 

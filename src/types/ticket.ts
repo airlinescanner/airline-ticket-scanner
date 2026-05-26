@@ -43,6 +43,8 @@ export interface Ticket {
   scannedAt: string;          // ISO 8601
   notificationEnabled: boolean;
   notificationId: string | null;
+  customNotificationId: string | null;    // ID для ручного напоминания
+  customNotificationDate: string | null;  // Дата ручного напоминания (ISO 8601)
   bookingReference: string | null;
   tripId: number | null;
 }

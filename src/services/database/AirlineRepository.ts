@@ -361,6 +361,50 @@ export class AirlineRepository {
   }
 
   /**
+   * Интеллектуальное слияние данных (Upsert) для сохранения пользовательских правок
+   */
+  async initializeV6Smart(seedData: Omit<Airline, 'id' | 'updatedAt'>[]): Promise<void> {
+    const db = await databaseService.getDatabase();
+
+    for (const airline of seedData) {
+      try {
+        const existing = await this.findByCode(airline.iataCode);
+        if (!existing) {
+          // Если такой авиакомпании нет - создаем новую
+          await this.create(airline);
+        } else {
+          // Если она есть, безопасно обновляем ее системные данные (имя, страну, ICAO-код), 
+          // но сохраняем пользовательские checkInHoursBefore и URL (если они уже заполнены)
+          const updatedAt = new Date().toISOString();
+          await db.runAsync(
+            `UPDATE airlines SET 
+              icao_code = ?, 
+              name = ?, 
+              country = ?, 
+              updated_at = ? 
+             WHERE id = ?`,
+            [
+              airline.icaoCode.toUpperCase(),
+              airline.name,
+              airline.country,
+              updatedAt,
+              existing.id
+            ]
+          );
+        }
+      } catch (error) {
+        console.warn(`Failed to smart-seed airline ${airline.iataCode}:`, error);
+      }
+    }
+
+    // Устанавливаем флаг инициализации V6
+    await db.runAsync(
+      'INSERT OR REPLACE INTO app_meta (key, value) VALUES (?, ?)',
+      ['is_seeded_v6', 'true']
+    );
+  }
+
+  /**
    * Проверить, была ли выполнена инициализация V7 (добавление URL регистрации)
    */
   async isInitializedV8(): Promise<boolean> {

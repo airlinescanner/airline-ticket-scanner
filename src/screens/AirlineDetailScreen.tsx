@@ -12,6 +12,7 @@ import { PillButton } from '../components/PillButton';
 import { Card } from '../components/Card';
 import { ScreenGradient } from '../components/ScreenGradient';
 import { airlineRepository } from '../services/database/AirlineRepository';
+import { airlineUpdateService } from '../services/AirlineUpdateService';
 import { Airline } from '../types/airline';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AirlineDetail'>;
@@ -28,6 +29,7 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [isEditing, setIsEditing] = useState(isNew || initialMode === 'edit');
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
+
   
   const [formData, setFormData] = useState<Omit<Airline, 'id' | 'updatedAt'>>({
     name: '',
@@ -134,6 +136,7 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
       ]
     });
   };
+
 
   if (isLoading) {
     return (
@@ -339,7 +342,7 @@ export const AirlineDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               {renderInfoItem(t('airline.registrationUrl'), formData.registrationUrl, 'link-outline')}
               {renderInfoItem(t('airline.supportPhone'), formData.supportPhone, 'call-outline')}
               {renderInfoItem(t('airline.checkInHoursBefore'), formData.checkInHoursBefore, 'time-outline', true)}
-              
+
               {formData.registrationUrl && (
                 <PillButton 
                   title={t('airline.openWebsite') || 'Go to Registration'} 

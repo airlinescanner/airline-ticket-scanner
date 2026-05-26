@@ -99,15 +99,23 @@ export class AiService {
       }, timeoutMs);
 
       const data = await response.json();
+      if (data.detail && data.detail.error) {
+        throw new Error(`Tavily API Error: ${data.detail.error}`);
+      }
+      
       // Превращаем результаты поиска в один текстовый блок для ИИ
       const resultsText = data.results?.map((r: any) => 
         `Source: ${r.url}\nTitle: ${r.title}\nContent: ${r.content}\n`
       ).join('\n---\n');
 
-      return resultsText || 'No search results found.';
-    } catch (error) {
+      if (!resultsText) {
+        throw new Error('Tavily returned no search results.');
+      }
+
+      return resultsText;
+    } catch (error: any) {
       console.error('[AiService] Tavily search error:', error);
-      return 'Error performing search.';
+      throw error; // Re-throw to handle it upstream
     }
   }
 
@@ -219,7 +227,7 @@ export class AiService {
 
   private async executeGeminiAnalysis(apiKey: string, imageUri: string, ocrData?: { text: string; blocks?: any[] }, timeoutMs: number = 30000): Promise<TicketData[]> {
     const base64Image = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' });
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const response = await fetchWithTimeout(url, {
       method: "POST",
@@ -257,7 +265,8 @@ export class AiService {
     return `
       ${ocrContext}
       Extract airline ticket data from this image.
-      Return ONLY a JSON array of objects.
+      IMPORTANT: You MUST extract EVERY SINGLE FLIGHT SEGMENT listed in the document. A single document or itinerary often contains multiple flights (e.g., 2, 3, or 4 flights). Do not miss any flights!
+      Return ONLY a JSON array of objects, with one object for EACH flight segment found.
       Fields: passengerName, airlineName, airlineCode, flightNumber, departureDate (YYYY-MM-DD), departureTime (HH:mm), departureCity, departureAirport (3-letter), arrivalCity, arrivalAirport (3-letter), bookingReference (PNR).
       Return ONLY the JSON array. No extra text.
     `;
@@ -338,6 +347,7 @@ export class AiService {
       
       STEP 2: EXTRACTION
       Based ONLY on your transcription from Step 1, generate a JSON array of objects.
+      CRITICAL INSTRUCTION: You MUST extract EVERY SINGLE FLIGHT SEGMENT listed in the document. First, mentally COUNT how many individual flights are present (e.g., Chisinau->Vienna, Vienna->Ibiza, Ibiza->Munich, Munich->Nice = 4 flights). Then, ensure your JSON array has EXACTLY that many objects. Do not combine flights! Your JSON array MUST contain one separate object for EACH individual flight segment found. 
       
       JSON FIELDS:
       - passengerName: Full name without titles (MR, MRS, MS). Replace "/" with space.

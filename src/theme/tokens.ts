@@ -49,7 +49,6 @@ const lightTokens = {
   },
 };
 
-// Экспорт токенов
 export const themes: Record<'light' | 'dark', ThemeTokens> = {
   dark: darkTokens,
   light: lightTokens,

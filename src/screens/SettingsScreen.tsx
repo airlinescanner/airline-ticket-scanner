@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { saveLanguage } from '../i18n';
 import { Card } from '../components/Card';
-import { Input } from '../components/Input';
 import { ScreenGradient } from '../components/ScreenGradient';
 import { airlineUpdateService } from '../services/AirlineUpdateService';
+import { notificationScheduler } from '../services/NotificationScheduler';
 
 export const SettingsScreen: React.FC = () => {
   const { tokens, mode, setMode } = useTheme();
@@ -80,23 +80,69 @@ export const SettingsScreen: React.FC = () => {
       });
       
       let reportMessage = '';
+      const isRu = i18n.language === 'ru';
+      const isUk = i18n.language === 'uk';
 
       if (report.changes.length > 0) {
-        reportMessage += `${t('settings.updateSuccessMessage')}:\n`;
+        const successTitle = isRu 
+          ? 'Обновленные правила регистрации'
+          : isUk 
+          ? 'Оновлені правила реєстрації' 
+          : 'Updated registration rules';
+          
+        reportMessage += `📢  ${successTitle.toUpperCase()}:\n`;
+        reportMessage += `⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n`;
+        
         report.changes.forEach(c => {
-          const changeText = c.field === 'hours' ? `${c.oldValue}h → ${c.newValue}h` : 
-                           c.field === 'url' ? t('settings.linkUpdated', 'Link updated') : 
-                           `${c.newValue} (rules updated)`;
-          reportMessage += `• ${c.airlineName}: ${changeText}\n`;
+          let changeText = '';
+          const hourUnit = isRu ? 'ч' : isUk ? 'год' : 'h';
+          const linkUpdatedStr = isRu ? 'обновлена ссылка' : isUk ? 'оновлено посилання' : 'link updated';
+
+          // Извлекаем чистые числовые значения часов
+          const getCleanHours = (val: any) => {
+            if (typeof val === 'number') return val;
+            const match = String(val).match(/^(\d+)/);
+            return match ? parseInt(match[1]) : val;
+          };
+
+          const oldH = getCleanHours(c.oldValue);
+          const newH = getCleanHours(c.newValue);
+
+          if (c.field === 'both') {
+            changeText = `✈️  ${c.airlineName}\n    ${oldH}${hourUnit} ➔ ${newH}${hourUnit} (${linkUpdatedStr})`;
+          } else if (c.field === 'hours') {
+            changeText = `🕒  ${c.airlineName}\n    ${oldH}${hourUnit} ➔ ${newH}${hourUnit}`;
+          } else if (c.field === 'url') {
+            changeText = `🔗  ${c.airlineName}\n    ${isRu ? 'Обновлена ссылка на регистрацию' : isUk ? 'Оновлено посилання на реєстрацію' : 'Registration link updated'}`;
+          } else {
+            changeText = `✈️  ${c.airlineName}\n    ${c.newValue}`;
+          }
+          reportMessage += `${changeText}\n\n`;
         });
-        reportMessage += '\n';
+        reportMessage += `⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n`;
       }
 
+      // Группируем предупреждения/ошибки компактно
       if (report.failed.length > 0) {
-        reportMessage += `⚠️ ${t('common.error')}:\n`;
-        report.failed.forEach(f => {
-          reportMessage += `• ${f.airlineName}: ${f.reason}\n`;
-        });
+        const warningsCount = report.failed.filter(f => f.type === 'warning' || f.reason.includes('не найдены') || f.reason.includes('not found') || f.reason.includes('найдены')).length;
+        const realErrors = report.failed.filter(f => f.type === 'error' && !f.reason.includes('не найдены') && !f.reason.includes('not found') && !f.reason.includes('найдены'));
+        
+        if (warningsCount > 0) {
+          const warningTitle = isRu 
+            ? `ℹ️  Для ${warningsCount} авиакомпаний данные не изменились`
+            : isUk
+            ? `ℹ️  Для ${warningsCount} авіакомпаній дані не змінилися`
+            : `ℹ️  For ${warningsCount} airlines, data was unchanged`;
+          reportMessage += `${warningTitle}\n`;
+        }
+        
+        if (realErrors.length > 0) {
+          const errorTitle = isRu ? '⚠️  Ошибки подключения' : isUk ? '⚠️  Помилки підключення' : '⚠️  Connection errors';
+          reportMessage += `\n${errorTitle}:\n`;
+          realErrors.forEach(err => {
+            reportMessage += `• ${err.airlineName}: ${err.reason}\n`;
+          });
+        }
       }
 
       if (report.changes.length === 0 && report.failed.length === 0) {
@@ -120,35 +166,6 @@ export const SettingsScreen: React.FC = () => {
       setSyncStatus('');
     }
   };
-
-  const renderSettingItem = (
-    label: string, 
-    value: string, 
-    icon: string, 
-    onPress: () => void,
-    isSelected: boolean
-  ) => (
-    <TouchableOpacity 
-      style={[
-        styles.item, 
-        { backgroundColor: isSelected ? tokens.colors.accent.primary + '15' : 'transparent' }
-      ]} 
-      onPress={onPress}
-    >
-      <View style={styles.itemContent}>
-        <Ionicons name={icon as any} size={22} color={isSelected ? tokens.colors.accent.primary : tokens.colors.text.secondary} />
-        <Text style={[
-          styles.itemLabel, 
-          { color: isSelected ? tokens.colors.accent.primary : tokens.colors.text.primary }
-        ]}>
-          {label}
-        </Text>
-      </View>
-      {isSelected && (
-        <Ionicons name="checkmark-circle" size={22} color={tokens.colors.accent.primary} />
-      )}
-    </TouchableOpacity>
-  );
 
   return (
     <ScreenGradient style={styles.wrapper}>
@@ -197,10 +214,9 @@ export const SettingsScreen: React.FC = () => {
         </Card>
       </View>
 
-
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
-          {t('settings.airlineDatabase')}
+          {t('settings.airlineDatabase').toUpperCase()}
         </Text>
         <Card style={styles.card}>
           <TouchableOpacity 

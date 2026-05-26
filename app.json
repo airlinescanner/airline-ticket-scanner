@@ -4,14 +4,20 @@
     "slug": "airline-ticket-scanner",
     "scheme": "airlineticketscanner",
     "version": "1.0.0",
+    "sdkVersion": "52.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#143B57"
+      "resizeMode": "cover",
+      "backgroundColor": "#082D52"
+    },
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#2979FF",
+      "iosDisplayInForeground": true
     },
     "ios": {
       "supportsTablet": true,
@@ -26,7 +32,9 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
       ]
     },
     "web": {
@@ -52,6 +60,8 @@
       "expo-sqlite",
       "expo-localization",
       "expo-font",
+      "expo-file-system",
+      "expo-notifications",
       [
         "react-native-vision-camera",
         {
@@ -59,7 +69,8 @@
           "enableCodeScanner": false,
           "disableFrameProcessors": true
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

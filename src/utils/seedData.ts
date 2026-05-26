@@ -628,4 +628,15 @@ export const seedAirlines: Omit<Airline, 'id' | 'updatedAt'>[] = [
     checkInHoursBefore: 24,
     notes: null,
   },
+  {
+    iataCode: '4Y',
+    icaoCode: 'OCN',
+    name: 'Discover Airlines',
+    country: 'Germany',
+    logoUrl: null,
+    registrationUrl: 'https://www.discover-airlines.com/en/check-in/',
+    supportPhone: '',
+    checkInHoursBefore: 30,
+    notes: null,
+  },
 ];

@@ -22,30 +22,40 @@ export interface UpdateReport {
   }>;
 }
 
+const CENTRAL_DB_URL = process.env.EXPO_PUBLIC_CENTRAL_DB_URL || 'https://raw.githubusercontent.com/airlinescanner/airlinescanner/main/airlines_data.json';
+
 export class AirlineUpdateService {
   /**
    * Найти данные об авиакомпании в сети и сохранить в базу
    */
-  async fetchAndSaveAirline(iataCode: string): Promise<Airline | null> {
+  async fetchAndSaveAirline(iataCode: string, airlineName?: string | null): Promise<Airline | null> {
     try {
-      console.log(`[AirlineUpdateService] Fetching new airline info for: ${iataCode}`);
-      const query = `official free online check-in opening window (hours before departure) for ${iataCode}. Example: 48, 24, 30.`;
+      console.log(`[AirlineUpdateService] Fetching new airline info for: ${iataCode} (${airlineName || 'No Name'})`);
+      
+      const query = airlineName 
+        ? `when does online check-in open for ${airlineName} (${iataCode}) hours before departure`
+        : `when does online check-in open for airline ${iataCode} hours before departure`;
       
       const searchResult = await aiService.searchWithTavily(query, 15000); // 15s timeout
       const prompt = `
-        Analyze this search result and extract airline data for code ${iataCode}.
+        Analyze this search result and extract airline data for code ${iataCode}${airlineName ? ` (Airline Name: ${airlineName})` : ''}.
         SEARCH CONTEXT: ${searchResult}
         
+        CRITICAL ACCURACY INSTRUCTIONS:
+        1. PRIORITIZE OFFICIAL DOMAINS: Highly prioritize search results originating directly from the airline's official website (e.g. discover-airlines.com, lufthansa.com, ryanair.com).
+        2. USE TRUSTWORTHY FALLBACKS: If the official domain results are missing, incomplete, or blocked (e.g. returning empty or 403 pages), you MUST fall back to reputable third-party travel websites.
+        3. VERIFY DISCREPANCIES: Direct official domain information is the absolute source of truth.
+        4. BE EXACT: Extract the EXACT number of hours stated for STANDARD flights. For example, Air France is 30 hours, Lufthansa is 23 hours. Do NOT guess or assume 24/48 if the text explicitly says 30 or 23. If the text says "30 hours before", return 30. If it says "24 hours", return 24.
+
         RETURN ONLY JSON:
         {
-          "name": "Full Name",
+          "name": "${airlineName || 'Full Name'}",
           "country": "Country Name",
           "iataCode": "${iataCode}",
           "icaoCode": "XXX",
           "hours": 48,
           "url": "https://..." 
         }
-        IMPORTANT: If a range is given (e.g., 48h to 30min), ALWAYS take the LARGEST number (48). 
         Be flexible with the URL, if not sure, keep it null.
       `;
       
@@ -74,175 +84,103 @@ export class AirlineUpdateService {
 
 
   /**
-   * Запустить обновление вручную с детальным отчетом
+   * Синхронизация локальной базы данных с центральным JSON на сервере GitHub
    */
   async performUpdate(onProgress?: (progress: number, status: string) => void): Promise<UpdateReport> {
-    const currentAirlines = await airlineRepository.findAll();
-    if (currentAirlines.length === 0) {
-      return { updatedCount: 0, changes: [], failed: [] };
-    }
-
     const report: UpdateReport = {
       updatedCount: 0,
       changes: [],
       failed: []
     };
 
-    const total = currentAirlines.length;
-    const batchSize = 3; // Уменьшили батч для более глубокого анализа каждой авиакомпании
-
-    for (let i = 0; i < currentAirlines.length; i += batchSize) {
-      const batch = currentAirlines.slice(i, i + batchSize);
-      const currentProgress = Math.round((i / total) * 100);
-      
-      onProgress?.(currentProgress, `Анализируем: ${batch.map(a => a.name).join(', ')}...`);
-
-      const batchResults = await this.processBatch(batch);
-      
-      // Собираем результаты в общий отчет
-      report.changes.push(...batchResults.changes);
-      report.failed.push(...batchResults.failed);
-      report.updatedCount += batchResults.changes.length;
-    }
-
-    onProgress?.(100, 'Обновление завершено!');
-    await AsyncStorage.setItem(LAST_UPDATE_KEY, new Date().toISOString());
-    return report;
-  }
-
-  private async processBatch(airlines: Airline[]): Promise<Omit<UpdateReport, 'updatedCount'>> {
-    const batchReport: Omit<UpdateReport, 'updatedCount'> = {
-      changes: [],
-      failed: []
-    };
-
-    let searchContext = '';
-
-    // 1. Собираем контекст для всей пачки
-    for (const airline of airlines) {
-      const query = `airline online check-in opening hours before flight for ${airline.name} (${airline.iataCode}). Look for phrases like "check-in opens X hours before".`;
-      
-      try {
-        const searchResult = await aiService.searchWithTavily(query, 10000); // 10s timeout per airline in batch
-        searchContext += `\n--- AIRLINE: ${airline.name} (${airline.iataCode}) ---\n${searchResult}\n`;
-      } catch (e) {
-        console.error(`Search failed for ${airline.name}:`, e);
-        batchReport.failed.push({ 
-          airlineName: airline.name, 
-          reason: 'Ошибка поиска в сети', 
-          type: 'error' 
-        });
-      }
-    }
-
-    if (!searchContext) return batchReport;
-
-    // 2. ИИ анализирует данные и выносит вердикт
-    const prompt = `
-      You are an Airline Data Auditor. Analyze the search context and provide updated rules.
-      
-      CONTEXT:
-      ${searchContext}
-      
-      TASK:
-      For each airline (${airlines.map(a => a.iataCode).join(', ')}):
-      1. Find the FREE online check-in opening time (in hours before departure).
-      2. If a range is mentioned (e.g., 23-48 hours), pick the EARLIEST opening time (the largest number, e.g., 48).
-      3. ONLY set success to false if you find absolutely zero information about this airline.
-      
-      RETURN ONLY JSON ARRAY:
-      [{
-        "iataCode": "LH",
-        "success": true,
-        "hours": 48,
-        "url": "https://...",
-        "status": "ok"
-      }]
-    `;
-
     try {
-      const response = await aiService.analyzeText(prompt, AiProvider.MISTRAL, 35000); // 35s for batch analysis
-      const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
+      console.log(`[AirlineUpdateService] Fetching updates from central DB: ${CENTRAL_DB_URL}`);
+      onProgress?.(10, 'Подключение к серверу...');
       
-      let results: any;
-      try {
-        results = JSON.parse(cleanJson);
-      } catch (parseError) {
-        console.error('[AirlineUpdateService] Raw AI Response:', response);
-        throw new Error('Некорректный формат JSON от ИИ');
+      const response = await fetch(CENTRAL_DB_URL, {
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Ошибка подключения: ${response.status}`);
       }
 
-      // Если ИИ прислал объект вместо массива, ищем массив внутри (частая ошибка ИИ)
-      if (!Array.isArray(results) && typeof results === 'object' && results !== null) {
-        const potentialArrayKey = Object.keys(results).find(k => Array.isArray(results[k]));
-        if (potentialArrayKey) {
-          results = results[potentialArrayKey];
-        } else {
-          // Если это просто один объект, превращаем в массив
-          results = [results];
-        }
+      onProgress?.(30, 'Анализ полученных данных...');
+      const data = await response.json();
+      
+      if (!data || !Array.isArray(data.airlines)) {
+        throw new Error('Неверный формат данных на сервере');
       }
 
-      if (!Array.isArray(results)) {
-        throw new Error('ИИ не вернул список данных');
-      }
+      const remoteAirlines = data.airlines;
+      const currentAirlines = await airlineRepository.findAll();
+      const total = remoteAirlines.length;
 
-      for (const result of results) {
-        if (!result || typeof result !== 'object') continue;
-        
-        const iata = result.iataCode || result.iata;
-        if (!iata) continue;
+      onProgress?.(50, 'Синхронизация локальной базы...');
 
-        const local = airlines.find(a => a.iataCode === iata);
-        if (!local) continue;
+      for (let i = 0; i < remoteAirlines.length; i++) {
+        const remote = remoteAirlines[i];
+        if (!remote.success) continue; // Пропускаем неудачные сканирования
 
-        if (result.success === false) {
-          batchReport.failed.push({ 
-            airlineName: local.name, 
-            reason: result.reason || 'Данные не найдены', 
-            type: 'warning' 
-          });
+        const local = currentAirlines.find(a => a.iataCode === remote.iataCode);
+        if (!local) {
+          // Если такой авиакомпании у нас почему-то нет в SQLite, мы ее создаем!
+          try {
+            await airlineRepository.create({
+              iataCode: remote.iataCode,
+              icaoCode: 'UNK',
+              name: remote.iataCode, // Используем код как имя по умолчанию
+              country: 'Unknown',
+              checkInHoursBefore: Math.max(1, Math.min(720, remote.hours)),
+              registrationUrl: remote.url,
+              logoUrl: null,
+              supportPhone: null,
+              notes: 'Added via central sync'
+            });
+            report.changes.push({
+              airlineName: `Новая авиакомпания (${remote.iataCode})`,
+              field: 'both',
+              oldValue: 'отсутствует',
+              newValue: `${remote.hours}ч`
+            });
+          } catch (createErr) {
+            console.error(`Failed to auto-create airline ${remote.iataCode}:`, createErr);
+          }
           continue;
         }
 
-        const safeHours = (result.hours !== undefined && result.hours !== null) 
-          ? Math.max(1, Math.min(720, Math.round(result.hours))) 
-          : local.checkInHoursBefore;
-        
+        const safeHours = Math.max(1, Math.min(720, Math.round(remote.hours)));
         const hoursChanged = local.checkInHoursBefore !== safeHours;
         
-        let finalUrl = result.url || local.registrationUrl;
-        // Авто-исправление протокола
+        let finalUrl = remote.url || local.registrationUrl;
         if (finalUrl && !finalUrl.startsWith('http')) {
           finalUrl = 'https://' + finalUrl;
         }
-        
         const urlChanged = finalUrl && local.registrationUrl !== finalUrl;
 
         if (hoursChanged || urlChanged) {
-          // Обновляем в базе
           await airlineRepository.update(local.id, {
             checkInHoursBefore: safeHours,
             registrationUrl: finalUrl || local.registrationUrl,
-            notes: `Auto-updated on ${new Date().toLocaleDateString()}`
+            notes: `Synced from central DB on ${new Date().toLocaleDateString()}`
           });
 
           if (hoursChanged && urlChanged) {
-            batchReport.changes.push({
+            report.changes.push({
               airlineName: local.name,
               field: 'both',
-              oldValue: `${local.checkInHoursBefore}h`,
-              newValue: `${safeHours}h (link updated)`
+              oldValue: `${local.checkInHoursBefore}ч`,
+              newValue: `${safeHours}ч (ссылка обновлена)`
             });
           } else if (hoursChanged) {
-            batchReport.changes.push({
+            report.changes.push({
               airlineName: local.name,
               field: 'hours',
               oldValue: local.checkInHoursBefore,
               newValue: safeHours
             });
           } else if (urlChanged) {
-            batchReport.changes.push({
+            report.changes.push({
               airlineName: local.name,
               field: 'url',
               oldValue: local.registrationUrl || 'отсутствует',
@@ -250,17 +188,26 @@ export class AirlineUpdateService {
             });
           }
         }
+
+        const progress = 50 + Math.round((i / total) * 50);
+        onProgress?.(progress, `Синхронизация: ${Math.round((i / total) * 100)}%`);
       }
-    } catch (e) {
-      console.error('Batch analysis failed:', e);
-      airlines.forEach(a => {
-        if (!batchReport.failed.find(f => f.airlineName === a.name)) {
-          batchReport.failed.push({ airlineName: a.name, reason: 'Ошибка анализа ИИ', type: 'error' });
-        }
+
+      report.updatedCount = report.changes.length;
+      onProgress?.(100, 'Синхронизация завершена!');
+      await AsyncStorage.setItem(LAST_UPDATE_KEY, new Date().toISOString());
+
+    } catch (e: any) {
+      console.error('[AirlineUpdateService] Central sync failed:', e);
+      report.failed.push({
+        airlineName: 'Центральный сервер',
+        reason: e.message || 'Не удалось связаться с сервером',
+        type: 'error'
       });
+      onProgress?.(100, 'Ошибка синхронизации');
     }
 
-    return batchReport;
+    return report;
   }
 }
 

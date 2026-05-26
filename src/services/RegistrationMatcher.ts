@@ -40,7 +40,10 @@ export class RegistrationMatcher {
     
     if (!airline) {
       console.log(`[RegistrationMatcher] Airline ${targetCode} not found in DB. Triggering on-the-fly discovery...`);
-      airline = await airlineUpdateService.fetchAndSaveAirline(targetCode);
+      airline = await airlineUpdateService.fetchAndSaveAirline(
+        targetCode, 
+        ticket.operatingAirlineName || ticket.airlineName
+      );
     }
 
     if (!airline) return null;
@@ -61,7 +64,7 @@ export class RegistrationMatcher {
 
     // 3. Форматируем местное время открытия для пользователя
     const localOpening = openingUTC.setZone(timezone);
-    const formattedDate = localOpening.toFormat('dd.MM.yyyy HH:mm');
+    const formattedDate = localOpening.toFormat('dd.MM.yyyy HH.mm');
 
     return {
       airline,

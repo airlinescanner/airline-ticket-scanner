@@ -12,6 +12,8 @@ import { ScreenGradient } from '../components/ScreenGradient';
 import { formatDateToDisplay, parseDisplayDateToISO } from '../utils/dateUtils';
 import { ticketRepository } from '../services/database/TicketRepository';
 import { tripRepository } from '../services/database/TripRepository';
+import { airlineRepository } from '../services/database/AirlineRepository';
+import { airlineUpdateService } from '../services/AirlineUpdateService';
 import { notificationScheduler } from '../services/NotificationScheduler';
 import { registrationMatcher } from '../services/RegistrationMatcher';
 
@@ -149,7 +151,19 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
           operatingAirlineCode: flight.operatingAirlineCode || null,
         });
 
-        // 3. Автоматически планируем уведомление, если возможно
+        // 3. Активно проверяем и обновляем правила для этой авиакомпании по её ссылке в фоне
+        try {
+          const targetCode = savedTicket.operatingAirlineCode || savedTicket.airlineCode;
+          const airline = await airlineRepository.findByCode(targetCode);
+          if (airline) {
+            console.log(`[ScanResultScreen] Found airline ${airline.name} (${targetCode}) in DB. Active rule verification from official web...`);
+            await airlineUpdateService.updateAirlineRulesFromWeb(airline);
+          }
+        } catch (err) {
+          console.warn('[ScanResultScreen] Background active rule verification failed:', err);
+        }
+
+        // 4. Автоматически планируем уведомление, если возможно
         try {
           const regInfo = await registrationMatcher.match(savedTicket);
           if (regInfo && regInfo.registrationOpensAt.getTime() > Date.now()) {

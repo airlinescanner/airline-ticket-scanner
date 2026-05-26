@@ -96,6 +96,8 @@ class DatabaseService {
         scanned_at           TEXT NOT NULL,
         notification_enabled INTEGER NOT NULL DEFAULT 0 CHECK(notification_enabled IN (0, 1)),
         notification_id      TEXT,
+        custom_notification_id TEXT,
+        custom_notification_date TEXT,
         booking_reference    TEXT,
         trip_id              INTEGER,
         FOREIGN KEY(trip_id) REFERENCES trips(id) ON DELETE CASCADE
@@ -106,6 +108,13 @@ class DatabaseService {
     await this.db.execAsync('DELETE FROM tickets WHERE trip_id IS NULL OR trip_id NOT IN (SELECT id FROM trips)');
 
     // Migration for existing tables
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN custom_notification_id TEXT;");
+    } catch (e) {}
+    try {
+      await this.db.execAsync("ALTER TABLE tickets ADD COLUMN custom_notification_date TEXT;");
+    } catch (e) {}
+
     try {
       await this.db.execAsync("ALTER TABLE tickets ADD COLUMN airline_name TEXT;");
     } catch (e) {}

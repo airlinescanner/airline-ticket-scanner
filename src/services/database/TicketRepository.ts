@@ -22,9 +22,10 @@ export class TicketRepository {
         departure_airport, arrival_airport, arrival_city, arrival_country,
         seat, service_class,
         raw_json, scanned_at, notification_enabled, notification_id,
+        custom_notification_id, custom_notification_date,
         booking_reference, trip_id,
         operating_airline_name, operating_airline_code
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         ticket.passengerName,
         ticket.airlineName || null,
@@ -44,6 +45,8 @@ export class TicketRepository {
         scannedAt,
         ticket.notificationEnabled ? 1 : 0,
         ticket.notificationId || null,
+        ticket.customNotificationId || null,
+        ticket.customNotificationDate || null,
         ticket.bookingReference || null,
         ticket.tripId || null,
         ticket.operatingAirlineName || null,
@@ -101,6 +104,21 @@ export class TicketRepository {
     await db.runAsync(
       'UPDATE tickets SET notification_enabled = ?, notification_id = ? WHERE id = ?',
       [enabled ? 1 : 0, notificationId || null, id]
+    );
+  }
+
+  /**
+   * Обновить статус ручного уведомления
+   */
+  async updateCustomNotification(
+    id: number,
+    notificationId: string | null,
+    date: string | null
+  ): Promise<void> {
+    const db = await databaseService.getDatabase();
+    await db.runAsync(
+      'UPDATE tickets SET custom_notification_id = ?, custom_notification_date = ? WHERE id = ?',
+      [notificationId, date, id]
     );
   }
 
@@ -220,9 +238,10 @@ export class TicketRepository {
           departure_airport, arrival_airport, arrival_city, arrival_country,
           seat, service_class,
           raw_json, scanned_at, notification_enabled, notification_id,
+          custom_notification_id, custom_notification_date,
           booking_reference, trip_id,
           operating_airline_name, operating_airline_code
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           ticket.id,
           ticket.passengerName,
@@ -243,6 +262,8 @@ export class TicketRepository {
           ticket.scannedAt,
           ticket.notificationEnabled ? 1 : 0,
           ticket.notificationId || null,
+          ticket.customNotificationId || null,
+          ticket.customNotificationDate || null,
           ticket.bookingReference || null,
           ticket.tripId || null,
           ticket.operatingAirlineName || null,
@@ -278,6 +299,8 @@ export class TicketRepository {
       scannedAt: row.scanned_at,
       notificationEnabled: row.notification_enabled === 1,
       notificationId: row.notification_id,
+      customNotificationId: row.custom_notification_id,
+      customNotificationDate: row.custom_notification_date,
       bookingReference: row.booking_reference || null,
       tripId: row.trip_id || null,
     };
