@@ -6,6 +6,8 @@ import * as Localization from 'expo-localization';
 import uk from './uk.json';
 import ru from './ru.json';
 import en from './en.json';
+import de from './de.json';
+import fr from './fr.json';
 
 const LANGUAGE_KEY = 'user-language';
 
@@ -13,6 +15,8 @@ const resources = {
   uk: { translation: uk },
   ru: { translation: ru },
   en: { translation: en },
+  de: { translation: de },
+  fr: { translation: fr },
 };
 
 // Функция инициализации

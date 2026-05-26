@@ -46,10 +46,16 @@ jest.mock('react-native/Libraries/Utilities/Appearance', () => ({
 const ukTranslations = require('./src/i18n/uk.json');
 const ruTranslations = require('./src/i18n/ru.json');
 const enTranslations = require('./src/i18n/en.json');
+const deTranslations = require('./src/i18n/de.json');
+const frTranslations = require('./src/i18n/fr.json');
 
 const tMock = (key, options = {}) => {
   const lang = mockI18n.language || 'uk';
-  const translations = lang === 'ru' ? ruTranslations : (lang === 'en' ? enTranslations : ukTranslations);
+  let translations = ukTranslations;
+  if (lang === 'ru') translations = ruTranslations;
+  else if (lang === 'en') translations = enTranslations;
+  else if (lang === 'de') translations = deTranslations;
+  else if (lang === 'fr') translations = frTranslations;
   
   const parts = key.split('.');
   let val = translations;
@@ -82,6 +88,8 @@ const mockI18n = {
     if (lang === 'uk') return ukTranslations;
     if (lang === 'ru') return ruTranslations;
     if (lang === 'en') return enTranslations;
+    if (lang === 'de') return deTranslations;
+    if (lang === 'fr') return frTranslations;
     return {};
   }),
   hasResourceBundle: jest.fn().mockImplementation((lang) => true),

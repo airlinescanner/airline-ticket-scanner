@@ -34,6 +34,8 @@ export const SettingsScreen: React.FC = () => {
       case 'uk': return t('language.uk');
       case 'ru': return t('language.ru');
       case 'en': return t('language.en');
+      case 'de': return t('language.de');
+      case 'fr': return t('language.fr');
       default: return l;
     }
   };
@@ -59,6 +61,8 @@ export const SettingsScreen: React.FC = () => {
         { text: t('language.uk'), onPress: () => changeLanguage('uk') },
         { text: t('language.ru'), onPress: () => changeLanguage('ru') },
         { text: t('language.en'), onPress: () => changeLanguage('en') },
+        { text: t('language.de'), onPress: () => changeLanguage('de') },
+        { text: t('language.fr'), onPress: () => changeLanguage('fr') },
         { text: t('common.cancel'), style: 'cancel' },
       ]
     });

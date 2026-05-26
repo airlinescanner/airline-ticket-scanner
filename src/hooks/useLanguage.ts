@@ -26,7 +26,7 @@ export const useLanguage = () => {
    * Вимога 9.2: Негайне застосування вибраної мови без перезапуску
    * Вимога 9.4: Збереження вибраної мови в AsyncStorage
    */
-  const changeLanguage = async (language: 'uk' | 'ru') => {
+  const changeLanguage = async (language: 'uk' | 'ru' | 'en' | 'de' | 'fr') => {
     try {
       // Змінюємо мову в i18next (негайне застосування)
       await i18n.changeLanguage(language);
@@ -43,7 +43,7 @@ export const useLanguage = () => {
    * 
    * Вимога 9.5: Українська мова за замовчуванням
    */
-  const currentLanguage = i18n.language as 'uk' | 'ru';
+  const currentLanguage = i18n.language as 'uk' | 'ru' | 'en' | 'de' | 'fr';
 
   return {
     currentLanguage,

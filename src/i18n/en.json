@@ -35,6 +35,8 @@
     "error": "Error",
     "success": "Success",
     "retry": "Retry",
+    "saveAnyway": "Save a copy",
+    "deleteExisting": "Delete existing",
     "letters_2": "(2 letters)",
     "letters_3": "(3 letters)",
     "copied": "Copied!"
@@ -47,7 +49,9 @@
   "language": {
     "uk": "Ukrainian",
     "ru": "Russian",
-    "en": "English"
+    "en": "English",
+    "de": "German",
+    "fr": "French"
   },
   "scanner": {
     "title": "Scanner",
@@ -83,7 +87,14 @@
     "emptyHistory": "Ticket history is empty. Scan your first ticket!",
     "scannedAt": "Scanned at",
     "flights": "flights",
-    "savedSuccess": "Tickets saved successfully"
+    "savedSuccess": "Tickets saved successfully",
+    "flight": "Flight",
+    "airlineName": "Airline Name",
+    "departureCity": "Departure City",
+    "arrivalCity": "City of Arrival",
+    "bookingReference": "Booking Reference (PNR)",
+    "duplicateFound": "This ticket is already in the history.",
+    "saveAnywayPrompt": "Do you want to save a copy or delete the existing one?"
   },
   "trip": {
     "confirmDelete": "Delete entire trip and all its tickets?"
