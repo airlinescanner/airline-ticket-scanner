@@ -1,0 +1,353 @@
+{
+  "lastUpdated": "2026-05-26T19:19:34.352Z",
+  "airlines": [
+    {
+      "iataCode": "LH",
+      "success": true,
+      "hours": 30,
+      "url": "https://www.lufthansa.com/check-in"
+    },
+    {
+      "iataCode": "LO",
+      "success": true,
+      "hours": 36,
+      "url": "https://www.lot.com/check-in"
+    },
+    {
+      "iataCode": "FR",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.ryanair.com/check-in"
+    },
+    {
+      "iataCode": "W6",
+      "success": true,
+      "hours": 24,
+      "url": "https://wizzair.com/check-in"
+    },
+    {
+      "iataCode": "AF",
+      "success": true,
+      "hours": 30,
+      "url": "https://www.airfrance.com/check-in"
+    },
+    {
+      "iataCode": "BA",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.britishairways.com/check-in"
+    },
+    {
+      "iataCode": "KL",
+      "success": true,
+      "hours": 30,
+      "url": "https://www.klm.com/check-in"
+    },
+    {
+      "iataCode": "U2",
+      "success": true,
+      "hours": 720,
+      "url": "https://www.easyjet.com/en/check-in"
+    },
+    {
+      "iataCode": "IB",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.iberia.com/check-in"
+    },
+    {
+      "iataCode": "VY",
+      "success": true,
+      "hours": 72,
+      "url": "https://www.vueling.com/en/check-in"
+    },
+    {
+      "iataCode": "LX",
+      "success": true,
+      "hours": 23,
+      "url": "https://www.swiss.com/check-in"
+    },
+    {
+      "iataCode": "OS",
+      "success": true,
+      "hours": 47,
+      "url": "https://www.austrian.com/check-in"
+    },
+    {
+      "iataCode": "SN",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.brusselsairlines.com/check-in"
+    },
+    {
+      "iataCode": "AY",
+      "success": true,
+      "hours": 36,
+      "url": "https://www.finnair.com/check-in"
+    },
+    {
+      "iataCode": "SK",
+      "success": true,
+      "hours": 22,
+      "url": "https://www.flysas.com/check-in"
+    },
+    {
+      "iataCode": "TP",
+      "success": true,
+      "hours": 36,
+      "url": "https://www.flytap.com/check-in"
+    },
+    {
+      "iataCode": "A3",
+      "success": true,
+      "hours": 48,
+      "url": "https://en.aegeanair.com/check-in"
+    },
+    {
+      "iataCode": "EI",
+      "success": true,
+      "hours": 48,
+      "url": "https://www.aerlingus.com/check-in"
+    },
+    {
+      "iataCode": "UX",
+      "success": true,
+      "hours": 48,
+      "url": "https://www.aireuropa.com/check-in"
+    },
+    {
+      "iataCode": "BT",
+      "success": true,
+      "hours": 36,
+      "url": "https://www.airbaltic.com/check-in"
+    },
+    {
+      "iataCode": "PS",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.flyuia.com/check-in"
+    },
+    {
+      "iataCode": "PQ",
+      "success": true,
+      "hours": 48,
+      "url": "https://skyup.aero/my-booking"
+    },
+    {
+      "iataCode": "7W",
+      "success": true,
+      "hours": 24,
+      "url": "https://windrose.kiev.ua/check-in"
+    },
+    {
+      "iataCode": "TK",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.turkishairlines.com/check-in"
+    },
+    {
+      "iataCode": "PC",
+      "success": true,
+      "hours": 72,
+      "url": "https://www.flypgs.com/en/check-in"
+    },
+    {
+      "iataCode": "EK",
+      "success": true,
+      "hours": 48,
+      "url": "https://www.emirates.com/check-in"
+    },
+    {
+      "iataCode": "QR",
+      "success": true,
+      "hours": 48,
+      "url": "https://www.qatarairways.com/check-in"
+    },
+    {
+      "iataCode": "EY",
+      "success": true,
+      "hours": 30,
+      "url": "https://www.etihad.com/check-in"
+    },
+    {
+      "iataCode": "FZ",
+      "success": true,
+      "hours": 48,
+      "url": "https://www.flydubai.com/en/check-in"
+    },
+    {
+      "iataCode": "LY",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "AA",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "DL",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "UA",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "SQ",
+      "success": true,
+      "hours": 48,
+      "url": null
+    },
+    {
+      "iataCode": "CX",
+      "success": true,
+      "hours": 48,
+      "url": null
+    },
+    {
+      "iataCode": "JL",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "KE",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "TG",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "QF",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "NZ",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "CI",
+      "success": true,
+      "hours": 48,
+      "url": null
+    },
+    {
+      "iataCode": "BR",
+      "success": true,
+      "hours": 48,
+      "url": null
+    },
+    {
+      "iataCode": "ET",
+      "success": true,
+      "hours": 36,
+      "url": null
+    },
+    {
+      "iataCode": "MS",
+      "success": true,
+      "hours": 48,
+      "url": null
+    },
+    {
+      "iataCode": "AT",
+      "success": true,
+      "hours": 48,
+      "url": null
+    },
+    {
+      "iataCode": "KQ",
+      "success": true,
+      "hours": 30,
+      "url": null
+    },
+    {
+      "iataCode": "DY",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "J2",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.azal.az/check-in"
+    },
+    {
+      "iataCode": "HY",
+      "success": true,
+      "hours": 24,
+      "url": "https://www.uzairways.com/check-in"
+    },
+    {
+      "iataCode": "T5",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "A9",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "9U",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "5F",
+      "success": true,
+      "hours": 24,
+      "url": "https://flyone.eu/check-in"
+    },
+    {
+      "iataCode": "KC",
+      "success": true,
+      "hours": 36,
+      "url": "https://airastana.com/check-in"
+    },
+    {
+      "iataCode": "DV",
+      "success": true,
+      "hours": 24,
+      "url": null
+    },
+    {
+      "iataCode": "FS",
+      "success": true,
+      "hours": 24,
+      "url": "https://flyarystan.com/check-in"
+    },
+    {
+      "iataCode": "IQ",
+      "success": true,
+      "hours": 24,
+      "url": "https://flyqazaq.com/check-in"
+    },
+    {
+      "iataCode": "4Y",
+      "success": true,
+      "hours": 30,
+      "url": "https://www.discover-airlines.com/en/check-in/"
+    }
+  ]
+}

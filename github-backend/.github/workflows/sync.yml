@@ -1,0 +1,38 @@
+name: Weekly Airline Rules Update
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    # Запуск каждое воскресенье в 00:00 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Позволяет запускать вручную из вкладки Actions на GitHub
+
+jobs:
+  update-rules:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Run Airline Update Script
+      env:
+        TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: node update_airlines.js
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add airlines_data.json
+        # Коммитим только если есть изменения
+        git diff-index --quiet HEAD || git commit -m "Auto-update airline rules [skip ci]"
+        git push origin main
