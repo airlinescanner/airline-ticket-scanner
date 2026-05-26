@@ -261,7 +261,7 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
               {t('registration.localTimeIn', { city: ticket.departureCity || 'departure city' })}
             </Text>
             <Text style={[styles.timezoneNote, { color: tokens.colors.text.secondary, marginTop: 4, fontWeight: 'bold' }]}>
-              (По Киеву: {DateTime.fromJSDate(regInfo.registrationOpensAt).setZone('Europe/Kyiv').toFormat('dd.MM.yyyy HH:mm')})
+              ({t('registration.yourTime', { time: DateTime.fromJSDate(regInfo.registrationOpensAt).toFormat('dd.MM.yyyy HH:mm') })})
             </Text>
             
             <View style={[styles.countdownContainer, { backgroundColor: tokens.colors.background.card }]}>

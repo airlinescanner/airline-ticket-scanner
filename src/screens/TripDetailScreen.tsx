@@ -316,7 +316,7 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                             </Text>
                           </View>
                           <Text style={{ fontSize: 11, color: tokens.colors.text.secondary, marginTop: 2, fontWeight: 'bold' }}>
-                            По Киеву: {DateTime.fromJSDate(regInfo.registrationOpensAt).setZone('Europe/Kyiv').toFormat('dd.MM.yyyy HH.mm')}
+                            {t('registration.yourTime', { time: DateTime.fromJSDate(regInfo.registrationOpensAt).toFormat('dd.MM.yyyy HH:mm') })}
                           </Text>
                           <Text style={[styles.regTimeUntil, { color: tokens.colors.status.error, marginTop: 4 }]}>
                             {timeUntil}
@@ -345,7 +345,7 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                             }}>
                               {ticket.customNotificationDate 
                                 ? DateTime.fromISO(ticket.customNotificationDate).toFormat('dd.MM HH:mm') 
-                                : 'Удобное время'}
+                                : t('ticket.customTime')}
                             </Text>
                           </TouchableOpacity>
 

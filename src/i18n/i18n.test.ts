@@ -58,6 +58,8 @@ describe('i18n Configuration', () => {
     expect(i18n.t('demo.title')).toBe('Дизайн-система');
     expect(i18n.t('demo.light')).toBe('Світла');
     expect(i18n.t('demo.dark')).toBe('Темна');
+    expect(i18n.t('ticket.customTime')).toBe('Зручний час');
+    expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('За вашим часом: 12:00');
   });
 
   it('должен корректно переводить ключи на русском', () => {
@@ -65,24 +67,32 @@ describe('i18n Configuration', () => {
     expect(i18n.t('demo.title')).toBe('Дизайн-система');
     expect(i18n.t('demo.light')).toBe('Светлая');
     expect(i18n.t('demo.dark')).toBe('Тёмная');
+    expect(i18n.t('ticket.customTime')).toBe('Удобное время');
+    expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('По вашему времени: 12:00');
   });
 
   it('должен корректно переводить ключи на английском', () => {
     i18n.changeLanguage('en');
     expect(i18n.t('demo.title')).toBe('Design System');
     expect(i18n.t('demo.light')).toBe('Light');
+    expect(i18n.t('ticket.customTime')).toBe('Reminder time');
+    expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('Your time: 12:00');
   });
 
   it('должен корректно переводить ключи на немецком', () => {
     i18n.changeLanguage('de');
     expect(i18n.t('demo.title')).toBe('Design-System');
     expect(i18n.t('demo.light')).toBe('Hell');
+    expect(i18n.t('ticket.customTime')).toBe('Erinnerungszeit');
+    expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('Ihre Zeit: 12:00');
   });
 
   it('должен корректно переводить ключи на французском', () => {
     i18n.changeLanguage('fr');
     expect(i18n.t('demo.title')).toBe('Système de design');
     expect(i18n.t('demo.light')).toBe('Clair');
+    expect(i18n.t('ticket.customTime')).toBe("Heure d'alerte");
+    expect(i18n.t('registration.yourTime', { time: '12:00' })).toBe('Votre heure : 12:00');
   });
 
   it('должен поддерживать интерполяцию', () => {

@@ -94,7 +94,8 @@
     "arrivalCity": "Ville d'arrivée",
     "bookingReference": "Référence de réservation (PNR)",
     "duplicateFound": "Ce billet est déjà dans l'historique.",
-    "saveAnywayPrompt": "Voulez-vous enregistrer une copie ou supprimer le billet existant ?"
+    "saveAnywayPrompt": "Voulez-vous enregistrer une copie ou supprimer le billet existant ?",
+    "customTime": "Heure d'alerte"
   },
   "trip": {
     "confirmDelete": "Supprimer tout le voyage et tous ses billets ?"
@@ -145,7 +146,8 @@
     "localTimeIn": "(Heure locale à {{city}})",
     "timeLeftDays": "dans {{days}} j. {{hours}} h.",
     "timeLeftHours": "dans {{hours}} h. {{minutes}} m.",
-    "timeLeftMinutes": "dans {{minutes}} m."
+    "timeLeftMinutes": "dans {{minutes}} m.",
+    "yourTime": "Votre heure : {{time}}"
   },
   "notification": {
     "title": "Enregistrement pour le vol {{flightNumber}}",

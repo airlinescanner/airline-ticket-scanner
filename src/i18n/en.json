@@ -94,7 +94,8 @@
     "arrivalCity": "City of Arrival",
     "bookingReference": "Booking Reference (PNR)",
     "duplicateFound": "This ticket is already in the history.",
-    "saveAnywayPrompt": "Do you want to save a copy or delete the existing one?"
+    "saveAnywayPrompt": "Do you want to save a copy or delete the existing one?",
+    "customTime": "Reminder time"
   },
   "trip": {
     "confirmDelete": "Delete entire trip and all its tickets?"
@@ -145,7 +146,8 @@
     "localTimeIn": "(Local time in {{city}})",
     "timeLeftDays": "in {{days}} d. {{hours}} h.",
     "timeLeftHours": "in {{hours}} h. {{minutes}} m.",
-    "timeLeftMinutes": "in {{minutes}} m."
+    "timeLeftMinutes": "in {{minutes}} m.",
+    "yourTime": "Your time: {{time}}"
   },
   "notification": {
     "title": "Check-in for flight {{flightNumber}}",

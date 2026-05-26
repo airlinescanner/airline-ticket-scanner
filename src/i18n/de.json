@@ -94,7 +94,8 @@
     "arrivalCity": "Ankunftsort",
     "bookingReference": "Buchungscode (PNR)",
     "duplicateFound": "Dieses Ticket ist bereits im Verlauf.",
-    "saveAnywayPrompt": "Möchten Sie eine Kopie speichern oder das existierende Ticket löschen?"
+    "saveAnywayPrompt": "Möchten Sie eine Kopie speichern oder das existierende Ticket löschen?",
+    "customTime": "Erinnerungszeit"
   },
   "trip": {
     "confirmDelete": "Die gesamte Reise und alle zugehörigen Tickets löschen?"
@@ -145,7 +146,8 @@
     "localTimeIn": "(Ortszeit in {{city}})",
     "timeLeftDays": "in {{days}} Tg. {{hours}} Std.",
     "timeLeftHours": "in {{hours}} Std. {{minutes}} Min.",
-    "timeLeftMinutes": "in {{minutes}} Min."
+    "timeLeftMinutes": "in {{minutes}} Min.",
+    "yourTime": "Ihre Zeit: {{time}}"
   },
   "notification": {
     "title": "Check-in für Flug {{flightNumber}}",

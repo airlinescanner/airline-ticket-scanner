@@ -94,7 +94,8 @@
     "arrivalCity": "Город прибытия",
     "bookingReference": "Код бронирования (PNR)",
     "duplicateFound": "Этот билет уже есть в истории.",
-    "saveAnywayPrompt": "Хотите сохранить копию или удалить существующий?"
+    "saveAnywayPrompt": "Хотите сохранить копию или удалить существующий?",
+    "customTime": "Удобное время"
   },
   "trip": {
     "confirmDelete": "Удалить всю поездку и все билеты?"
@@ -145,7 +146,8 @@
     "localTimeIn": "(Местное время в {{city}})",
     "timeLeftDays": "через {{days}} дн. {{hours}} час.",
     "timeLeftHours": "через {{hours}} час. {{minutes}} мин.",
-    "timeLeftMinutes": "через {{minutes}} мин."
+    "timeLeftMinutes": "через {{minutes}} мин.",
+    "yourTime": "По вашему времени: {{time}}"
   },
   "notification": {
     "title": "Регистрация на рейс {{flightNumber}}",
