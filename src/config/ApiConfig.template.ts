@@ -8,6 +8,6 @@ export const API_CONFIG = {
   MISTRAL_MODEL: process.env.EXPO_PUBLIC_MISTRAL_MODEL ?? 'mistral-small-latest',
   GROQ_MODELS: (process.env.EXPO_PUBLIC_GROQ_MODELS ?? 'llama-3.3-70b-versatile')
     .split(',')
-    .map((item) => item.trim())
+    .map((item: string) => item.trim())
     .filter(Boolean),
 };

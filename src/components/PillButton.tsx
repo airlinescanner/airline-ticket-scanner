@@ -59,6 +59,9 @@ export function PillButton({
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled }}
     >
       <Text style={[styles.text, textStyle]}>{title}</Text>
     </TouchableOpacity>

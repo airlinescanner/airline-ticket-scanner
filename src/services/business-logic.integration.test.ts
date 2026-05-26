@@ -168,6 +168,8 @@ describe('Business Logic Integration Tests (Checkpoint 9)', () => {
         arrivalCountry: null,
         bookingReference: null,
         tripId: null,
+        customNotificationId: null,
+        customNotificationDate: null,
       });
 
       expect(savedTicket.id).toBeDefined();

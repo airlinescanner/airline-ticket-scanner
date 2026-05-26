@@ -29,7 +29,8 @@ export class TicketParser {
     'SEAT', 'CLASS', 'DATE', 'FROM', 'TO', 'ECONOMY', 'BUSINESS', 
     'FIRST', 'TERMINAL', 'BAGGAGE', 'EQUIPMENT', 'MEAL', 'CONFIRMED', 
     'STATUS', 'DURATION', 'AGENCY', 'TELEPHONE', 'TICKET', 'PASSENGER',
-    'TRAVELER', 'BOOKING', 'REF', 'DOCUMENT', 'ISSUE'
+    'TRAVELER', 'BOOKING', 'REF', 'DOCUMENT', 'ISSUE',
+    'MR', 'MRS', 'MS', 'MISS', 'MSTR', 'CHD', 'CHILD'
   ];
 
   parse(rawText: string): TicketData[] {
@@ -116,7 +117,7 @@ export class TicketParser {
       let isNewFlight = false;
       
       // 1. Идеальный разделитель для Amadeus: Заголовок с датой (WEDNESDAY 07 JANUARY 2026)
-      const isDateHeader = /\b(?:MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)\b\s+\d{1,2}\s+(?:JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{4}/.test(line);
+      const isDateHeader = /^(?:MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)\b\s+\d{1,2}\s+(?:JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{4}/i.test(line.trim());
 
       if (isDateHeader) {
         isNewFlight = true;
@@ -136,8 +137,21 @@ export class TicketParser {
       }
 
       if (isNewFlight && currentBlock.length > 0) {
-        blocks.push([...currentBlock]);
-        currentBlock = [line];
+        // Check if the current block already contains some flight information (airline or flight number)
+        const currentBlockHasFlightInfo = currentBlock.some(l => {
+          for (const [airlineName] of Object.entries(this.AIRLINES)) {
+            if (l.includes(airlineName)) return true;
+          }
+          return /\b[A-Z]{2}\s*\d{3,4}\b/.test(l);
+        });
+
+        if (currentBlockHasFlightInfo) {
+          blocks.push([...currentBlock]);
+          currentBlock = [line];
+        } else {
+          // If the current block was just header/metadata without flight info, do not split it yet.
+          currentBlock.push(line);
+        }
       } else {
         currentBlock.push(line);
       }
@@ -149,6 +163,7 @@ export class TicketParser {
 
     return blocks.length > 0 ? blocks : [lines];
   }
+
 
   private extractPassengerName(lines: string[]): string | null {
     const titleRegex = /\b(?:MRS|MR|MS|CH|CHILD|CHL)\b/;
@@ -184,29 +199,59 @@ export class TicketParser {
   }
 
   private extractAirlineAndFlight(lines: string[]): { airlineName: string | null, airlineCode: string | null, flightNumber: string | null } {
+    let detectedAirlineName: string | null = null;
+    let detectedAirlineCode: string | null = null;
+
+    // First, scan all lines to find the airline name/code from our dictionary
     for (const line of lines) {
       for (const [airlineName, code] of Object.entries(this.AIRLINES)) {
         if (line.includes(airlineName)) {
-          const flightRegex = new RegExp(`\\b${code}\\s*(\\d{1,4})\\b`);
-          const flightMatch = line.match(flightRegex);
-          
-          if (flightMatch) {
-            return { airlineName, airlineCode: code, flightNumber: `${code}${flightMatch[1]}` };
-          }
-          return { airlineName, airlineCode: code, flightNumber: null };
+          detectedAirlineName = airlineName;
+          detectedAirlineCode = code;
+          break;
         }
       }
+      if (detectedAirlineCode) break;
+    }
 
-      const genericFlightMatch = line.match(/\b([A-Z]{2})\s*(\d{3,4})\b/);
-      if (genericFlightMatch) {
-        const code = genericFlightMatch[1];
-        if (!['TO', 'ON', 'AT', 'IN'].includes(code)) {
-          return { airlineName: null, airlineCode: code, flightNumber: `${code}${genericFlightMatch[2]}` };
+    // Now look for the flight number matching the specific airline code in any of the lines
+    if (detectedAirlineCode) {
+      for (const line of lines) {
+        const flightRegex = new RegExp(`\\b${detectedAirlineCode}\\s*(\\d{1,4})\\b`);
+        const flightMatch = line.match(flightRegex);
+        if (flightMatch) {
+          return {
+            airlineName: detectedAirlineName,
+            airlineCode: detectedAirlineCode,
+            flightNumber: `${detectedAirlineCode}${flightMatch[1]}`
+          };
         }
       }
     }
-    return { airlineName: null, airlineCode: null, flightNumber: null };
+
+    // If no flight number matching the specific code was found, search for any generic flight number XX1234
+    for (const line of lines) {
+      const genericFlightMatch = line.match(/\b([A-Z]{2})\s*(\d{1,4})\b/);
+      if (genericFlightMatch) {
+        const code = genericFlightMatch[1];
+        if (!['TO', 'ON', 'AT', 'IN', 'PM', 'AM', 'HR'].includes(code)) {
+          return {
+            airlineName: detectedAirlineName,
+            airlineCode: code,
+            flightNumber: `${code}${genericFlightMatch[2]}`
+          };
+        }
+      }
+    }
+
+    // Fallback: return detected airline even if flight number is missing
+    return {
+      airlineName: detectedAirlineName,
+      airlineCode: detectedAirlineCode,
+      flightNumber: null
+    };
   }
+
 
   private extractDepartureInfo(lines: string[]): { departureDate: string | null, departureAirport: string | null } {
     const monthsStr = [...this.MONTHS, ...this.FULL_MONTHS].join('|');
@@ -247,6 +292,16 @@ export class TicketParser {
             departureAirport = routeMatch[1];
             break;
         }
+
+        // Try FROM: FRA or FROM FRA format
+        if (/^(?:FROM[:\s])/i.test(line)) {
+          const match = line.match(/\b([A-Z]{3})\b/);
+          const forbidden = [...this.MONTHS, ...this.BLACKLIST_WORDS];
+          if (match && !forbidden.includes(match[1])) {
+            departureAirport = match[1];
+            break;
+          }
+        }
     }
 
     // 4. Ищем аэропорт (тупо по всему блоку, потому что OCR может разбить колонки)
@@ -279,6 +334,15 @@ export class TicketParser {
       // Try SVO-LED or FROM ... TO ... format first
       const routeMatch = line.match(/\b([A-Z]{3})\s*(?:[-/]|TO)\s*([A-Z]{3})\b/i);
       if (routeMatch) return routeMatch[2];
+
+      // Try TO: LYS or TO LYS format
+      if (/^(?:TO[:\s])/i.test(line)) {
+        const match = line.match(/\b([A-Z]{3})\b/);
+        const forbidden = [...this.MONTHS, ...this.BLACKLIST_WORDS];
+        if (match && !forbidden.includes(match[1])) {
+          return match[1];
+        }
+      }
 
       if (line.includes('ARRIVAL')) {
         let targetLine = line;

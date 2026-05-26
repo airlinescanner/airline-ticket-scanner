@@ -13,7 +13,7 @@ import { registrationMatcher } from '../services/RegistrationMatcher';
 import { Ticket, Trip } from '../types/ticket';
 import { Card } from '../components/Card';
 import { ScreenGradient } from '../components/ScreenGradient';
-import { formatDateToDisplay, parseISO } from '../utils/dateUtils';
+import { formatDateToDisplay } from '../utils/dateUtils';
 import { openUrl } from '../utils/linkingUtils';
 import { extractIataCode, cleanCityName } from '../utils/stringUtils';
 import { Modal, Pressable } from 'react-native';
@@ -38,9 +38,11 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const [tempDate, setTempDate] = useState(new Date());
   const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
 
-  const fetchTripDetails = async () => {
+  const fetchTripDetails = async (skipLoading = false) => {
     try {
-      setIsLoading(true);
+      if (!skipLoading) {
+        setIsLoading(true);
+      }
       const currentTrip = await tripRepository.findById(tripId);
       
       if (currentTrip && currentTrip.tickets) {
@@ -72,7 +74,9 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     } catch (error) {
       console.error('Error fetching trip details:', error);
     } finally {
-      setIsLoading(false);
+      if (!skipLoading) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -142,29 +146,47 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!selectedTicket) return;
 
     try {
-      // Отменяем старое ручное уведомление, если оно было
-      if (selectedTicket.customNotificationId) {
-        await notificationScheduler.cancel(selectedTicket.customNotificationId);
-      }
-
-      // Планируем новое
-      const notificationId = await notificationScheduler.scheduleCustom(selectedTicket, date);
-      
-      // Сохраняем в базу
+      // 1. Сразу сохраняем дату в базу данных и обновляем UI, чтобы интерфейс среагировал мгновенно!
+      const tempId = 'temp_' + Date.now();
       await ticketRepository.updateCustomNotification(
         selectedTicket.id, 
-        notificationId, 
+        tempId, 
         date.toISOString()
       );
 
-      // Обновляем UI
-      fetchTripDetails();
+      // Обновляем UI мгновенно!
+      fetchTripDetails(true);
       
-      showAlert({
-        title: t('common.success'),
-        message: t('registration.reminderSet', 'Нагадування встановлено!'),
-        type: 'success'
-      });
+      setTimeout(() => {
+        showAlert({
+          title: t('common.success'),
+          message: t('registration.reminderSet', 'Нагадування встановлено!'),
+          type: 'success'
+        });
+      }, 500);
+
+      // 2. В фоновом режиме планируем уведомление в ОС, не блокируя UI!
+      const ticketCopy = { ...selectedTicket, customNotificationId: tempId, customNotificationDate: date.toISOString() };
+      (async () => {
+        try {
+          if (selectedTicket.customNotificationId && !selectedTicket.customNotificationId.startsWith('temp_')) {
+            await notificationScheduler.cancel(selectedTicket.customNotificationId);
+          }
+          
+          const notificationId = await notificationScheduler.scheduleCustom(ticketCopy, date);
+          if (notificationId) {
+            await ticketRepository.updateCustomNotification(
+              selectedTicket.id, 
+              notificationId, 
+              date.toISOString()
+            );
+            fetchTripDetails(true);
+          }
+        } catch (err) {
+          console.log('[Notification Background] Failed to schedule in background:', err);
+        }
+      })();
+
     } catch (error) {
       console.error('Error saving custom notification:', error);
     }
@@ -173,10 +195,12 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const handleRemoveCustomNotification = async (ticket: Ticket) => {
     try {
       if (ticket.customNotificationId) {
-        await notificationScheduler.cancel(ticket.customNotificationId);
+        notificationScheduler.cancel(ticket.customNotificationId).catch(err => 
+          console.error('Error cancelling notification:', err)
+        );
       }
       await ticketRepository.updateCustomNotification(ticket.id, null, null);
-      fetchTripDetails();
+      fetchTripDetails(true);
     } catch (error) {
       console.error('Error removing custom notification:', error);
     }
@@ -274,80 +298,68 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
                             {extractIataCode(ticket.arrivalAirport)}
                           </Text>
                           <Text style={[styles.airportTime, { color: tokens.colors.text.secondary }]}>
-                             — 
+                           — 
                           </Text>
                         </View>
                       </View>
-
-                      {regInfo && (
-                        <View style={[styles.regBox, { borderTopColor: tokens.colors.border.default }]}>
-                          <View style={styles.regInfo}>
-                            <Text style={[styles.regLabel, { color: tokens.colors.text.secondary }]}>
-                              {t('registration.opens')}
-                            </Text>
-                            <View style={styles.regValueRow}>
-                              <Text style={[styles.regValue, { color: tokens.colors.status.success }]}>
-                                {regInfo.formattedDate}
-                              </Text>
-                            </View>
-                            <Text style={{ fontSize: 11, color: tokens.colors.text.secondary, marginTop: 2, fontWeight: 'bold' }}>
-                              По Киеву: {DateTime.fromJSDate(regInfo.registrationOpensAt).setZone('Europe/Kyiv').toFormat('dd.MM.yyyy HH.mm')}
-                            </Text>
-                            
-                            {ticket.customNotificationDate && (
-                              <TouchableOpacity 
-                                style={styles.customReminderBox}
-                                onPress={() => {
-                                  showAlert({
-                                    title: t('registration.reminder'),
-                                    message: `${t('registration.reminderAt', 'Нагадування встановлено на')}: ${new Date(ticket.customNotificationDate).toLocaleString()}`,
-                                    buttons: [
-                                      { text: t('common.change'), onPress: () => handleOpenDatePicker(ticket) },
-                                      { text: t('common.delete'), style: 'destructive', onPress: () => handleRemoveCustomNotification(ticket) },
-                                      { text: t('common.close'), style: 'cancel' }
-                                    ]
-                                  });
-                                }}
-                              >
-                                <Text style={[styles.customReminderText, { color: tokens.colors.accent.primary }]}>
-                                  🔔 {DateTime.fromISO(ticket.customNotificationDate).toFormat('dd.MM.yyyy HH.mm')}
-                                </Text>
-                              </TouchableOpacity>
-                            )}
-
-                            <Text style={[
-                              styles.regTimeUntil, 
-                              { 
-                                color: tokens.colors.status.error 
-                              }
-                            ]}>
-                              {timeUntil}
-                            </Text>
-                          </View>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <TouchableOpacity 
-                              style={[styles.regButton, { backgroundColor: 'transparent' }]}
-                              onPress={() => handleOpenDatePicker(ticket)}
-                            >
-                              <Ionicons 
-                                name={ticket.customNotificationDate ? "notifications" : "notifications-outline"} 
-                                size={28} 
-                                color={ticket.customNotificationDate ? tokens.colors.status.error : tokens.colors.text.secondary} 
-                              />
-                            </TouchableOpacity>
-
-                            {regInfo.registrationUrl && (
-                              <TouchableOpacity 
-                                style={[styles.regButton, { backgroundColor: tokens.colors.accent.primary }]}
-                                onPress={() => openUrl(regInfo.registrationUrl)}
-                              >
-                                <Ionicons name="globe-outline" size={18} color="#FFF" />
-                              </TouchableOpacity>
-                            )}
-                          </View>
-                        </View>
-                      )}
                     </TouchableOpacity>
+
+                    {regInfo && (
+                      <View style={[styles.regBox, { borderTopColor: tokens.colors.border.default }]}>
+                        <View style={styles.regInfo}>
+                          <Text style={[styles.regLabel, { color: tokens.colors.text.secondary }]}>
+                            {t('registration.opens')}
+                          </Text>
+                          <View style={styles.regValueRow}>
+                            <Text style={[styles.regValue, { color: tokens.colors.status.success }]}>
+                              {regInfo.formattedDate}
+                            </Text>
+                          </View>
+                          <Text style={{ fontSize: 11, color: tokens.colors.text.secondary, marginTop: 2, fontWeight: 'bold' }}>
+                            По Киеву: {DateTime.fromJSDate(regInfo.registrationOpensAt).setZone('Europe/Kyiv').toFormat('dd.MM.yyyy HH.mm')}
+                          </Text>
+                          <Text style={[styles.regTimeUntil, { color: tokens.colors.status.error, marginTop: 4 }]}>
+                            {timeUntil}
+                          </Text>
+                        </View>
+
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <TouchableOpacity 
+                            style={
+                              ticket.customNotificationDate 
+                                ? [styles.customTimeActiveButton, { borderColor: 'rgba(255, 255, 255, 0.4)', backgroundColor: 'rgba(255, 255, 255, 0.12)' }] 
+                                : [styles.customTimeInactiveButton, { borderColor: 'rgba(255, 255, 255, 0.15)', backgroundColor: 'rgba(255, 255, 255, 0.03)' }]
+                            }
+                            onPress={() => handleOpenDatePicker(ticket)}
+                          >
+                            <Ionicons 
+                              name={ticket.customNotificationDate ? "notifications" : "notifications-outline"} 
+                              size={10} 
+                              color={ticket.customNotificationDate ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.6)'} 
+                              style={{ marginRight: 2 }}
+                            />
+                            <Text style={{ 
+                              fontSize: 9.5, 
+                              fontWeight: '700', 
+                              color: ticket.customNotificationDate ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.6)' 
+                            }}>
+                              {ticket.customNotificationDate 
+                                ? DateTime.fromISO(ticket.customNotificationDate).toFormat('dd.MM HH:mm') 
+                                : 'Удобное время'}
+                            </Text>
+                          </TouchableOpacity>
+
+                          {regInfo.registrationUrl && (
+                            <TouchableOpacity 
+                              style={[styles.regButton, { backgroundColor: tokens.colors.accent.primary }]}
+                              onPress={() => openUrl(regInfo.registrationUrl)}
+                            >
+                              <Ionicons name="globe-outline" size={16} color="#FFF" />
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    )}
                   </Card>
                 </View>
               </View>
@@ -426,6 +438,17 @@ export const TripDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
 
             <View style={styles.pickerActions}>
+              {selectedTicket?.customNotificationDate && (
+                <TouchableOpacity 
+                  style={[styles.pickerCancelBtn, { flex: 0.8, backgroundColor: 'rgba(255, 59, 48, 0.12)', borderRadius: 16, marginRight: 8 }]} 
+                  onPress={() => {
+                    setIsDatePickerVisible(false);
+                    handleRemoveCustomNotification(selectedTicket);
+                  }}
+                >
+                  <Text style={{ color: tokens.colors.status.error, fontWeight: 'bold' }}>{t('common.delete', 'Видалити')}</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity style={styles.pickerCancelBtn} onPress={() => setIsDatePickerVisible(false)}>
                 <Text style={{ color: tokens.colors.text.secondary, fontWeight: 'bold' }}>{t('common.cancel', 'Скасувати')}</Text>
               </TouchableOpacity>
@@ -496,13 +519,41 @@ const styles = StyleSheet.create({
   },
   customReminderText: { fontSize: 11, fontWeight: '700' },
   regTimeUntil: { fontSize: 14, marginTop: 4, fontWeight: '700' },
+  customTimeInactiveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 13,
+    borderWidth: 1,
+    height: 26,
+    justifyContent: 'center',
+  },
+  customTimeActiveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderRadius: 13,
+    borderWidth: 1,
+    height: 26,
+    justifyContent: 'center',
+  },
+  deleteReminderBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
   regButton: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
+    width: 30, 
+    height: 30, 
+    borderRadius: 15, 
     justifyContent: 'center', 
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: 8,
   },
   modalOverlay: {
     flex: 1,

@@ -123,6 +123,8 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
         rawJson: firstFlight.rawJson,
         notificationEnabled: true,
         notificationId: null,
+        customNotificationId: null,
+        customNotificationDate: null,
       });
 
       // 2. Сохраняем каждый рейс как отдельный билет, привязанный к этой поездке
@@ -146,6 +148,8 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
           rawJson: flight.rawJson,
           notificationEnabled: true,
           notificationId: null,
+          customNotificationId: null,
+          customNotificationDate: null,
           tripId: tripId,
           operatingAirlineName: flight.operatingAirlineName || null,
           operatingAirlineCode: flight.operatingAirlineCode || null,
@@ -155,9 +159,9 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
         try {
           const targetCode = savedTicket.operatingAirlineCode || savedTicket.airlineCode;
           const airline = await airlineRepository.findByCode(targetCode);
-          if (airline) {
-            console.log(`[ScanResultScreen] Found airline ${airline.name} (${targetCode}) in DB. Active rule verification from official web...`);
-            await airlineUpdateService.updateAirlineRulesFromWeb(airline);
+          if (airline && !airline.registrationUrl) {
+            console.log(`[ScanResultScreen] Found airline ${airline.name} (${targetCode}) in DB without registration URL. Auto-fetching...`);
+            await airlineUpdateService.fetchAndSaveAirline(targetCode, airline.name);
           }
         } catch (err) {
           console.warn('[ScanResultScreen] Background active rule verification failed:', err);

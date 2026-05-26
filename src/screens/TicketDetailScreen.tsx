@@ -103,7 +103,7 @@ export const TicketDetailScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   };
 
-  const handleCopyToClipboard = (text: string | undefined, label: string) => {
+  const handleCopyToClipboard = (text: string | null | undefined, label: string) => {
     if (!text) return;
     Clipboard.setString(text);
     Vibration.vibrate(50);

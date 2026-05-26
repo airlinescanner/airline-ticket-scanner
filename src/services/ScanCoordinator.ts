@@ -49,6 +49,27 @@ export class ScanCoordinator {
     }
 
     if (!finalResults || finalResults.length === 0) {
+      console.log('[ScanCoordinator] Network AI failed or offline. Invoking offline TicketParser regex fallback...');
+      try {
+        const { ticketParser } = require('./TicketParser');
+        const parsedOffline = ticketParser.parse(ocrContext.text);
+        if (parsedOffline && parsedOffline.length > 0) {
+          finalResults = parsedOffline.map((t: any) => ({
+            ...t,
+            rawJson: JSON.stringify({
+              ...t,
+              cloud: null,
+              parserType: 'offline-regex-fallback',
+              parsedAt: new Date().toISOString()
+            }, null, 2)
+          }));
+        }
+      } catch (parserErr) {
+        console.error('[ScanCoordinator] Offline parser fallback crashed:', parserErr);
+      }
+    }
+
+    if (!finalResults || finalResults.length === 0) {
       throw new Error('Не удалось распознать данные ни одним из сервисов. Проверьте фото или лимиты API.');
     }
 

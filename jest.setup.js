@@ -171,7 +171,7 @@ const mockDb = {
     }
     
     if (q.includes('INSERT INTO TICKETS')) {
-      const offset = params.length === 23 ? 1 : 0;
+      const offset = (params.length === 23 || params.length === 25) ? 1 : 0;
       const ticket = {
         id: offset === 1 ? params[0] : (DB_STATE.tickets.length + 1),
         passenger_name: params[0 + offset],
@@ -381,3 +381,20 @@ jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
   setNotificationChannelAsync: jest.fn().mockResolvedValue(null),
 }));
+
+// Mock expo-file-system
+jest.mock('expo-file-system', () => ({
+  readAsStringAsync: jest.fn().mockResolvedValue('mock-base64-content'),
+  documentDirectory: 'mock-doc-dir/',
+  cacheDirectory: 'mock-cache-dir/',
+  writeAsStringAsync: jest.fn(),
+  deleteAsync: jest.fn(),
+}));
+
+// Mock expo-image-manipulator
+jest.mock('expo-image-manipulator', () => ({
+  manipulateAsync: jest.fn().mockResolvedValue({ uri: 'mock-manipulated-image.jpg', width: 800, height: 600 }),
+  SaveFormat: { JPEG: 'jpeg', PNG: 'png' },
+}));
+
+

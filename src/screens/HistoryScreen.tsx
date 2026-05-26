@@ -11,7 +11,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../components/EmptyState';
 import { ScreenGradient } from '../components/ScreenGradient';
+import { PillButton } from '../components/PillButton';
 import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
 import type { RootStackParamList } from '../navigation/types';
 import { tripRepository } from '../services/database/TripRepository';
 import { Trip } from '../types/ticket';
@@ -23,6 +25,8 @@ export const HistoryScreen: React.FC = () => {
   const { t } = useTranslation();
   const { tokens } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  
+  const { showAlert } = useAlert();
   
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,11 +70,24 @@ export const HistoryScreen: React.FC = () => {
         contentContainerStyle={trips.length === 0 ? styles.emptyContainer : styles.listContainer}
         ListEmptyComponent={
           !isLoading ? (
-            <EmptyState
-              title={t('ticket.history_tab')}
-              message={t('ticket.emptyHistory')}
-              icon="calendar-outline"
-            />
+            <View style={{ alignItems: 'center', paddingHorizontal: 20 }}>
+              <EmptyState
+                title={t('ticket.history_tab')}
+                message={t('ticket.emptyHistory')}
+                icon="calendar-outline"
+              />
+              <PillButton
+                title={t('settings.howToUseTitle')}
+                onPress={() => showAlert({
+                  title: t('settings.howToUseTitle'),
+                  message: t('settings.howToUseMessage'),
+                  type: 'info',
+                  buttons: [{ text: t('common.ok') }]
+                })}
+                variant="secondary"
+                style={{ marginTop: -20, width: '80%' }}
+              />
+            </View>
           ) : null
         }
       />

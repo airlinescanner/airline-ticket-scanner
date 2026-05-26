@@ -35,7 +35,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       };
 
       const saved = await ticketRepository.save(ticket);
@@ -68,7 +68,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       };
 
       const saved = await ticketRepository.save(ticket);
@@ -102,7 +102,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       });
 
       // Небольшая задержка для разных scanned_at
@@ -129,7 +129,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       });
     });
 
@@ -169,7 +169,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       });
 
       const found = await ticketRepository.findById(saved.id);
@@ -208,7 +208,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       });
 
       await ticketRepository.updateNotification(saved.id, true, 'notif-456');
@@ -240,7 +240,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       });
 
       await ticketRepository.updateNotification(saved.id, false);
@@ -274,7 +274,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       });
 
       await ticketRepository.delete(saved.id);
@@ -308,7 +308,7 @@ describe('TicketRepository', () => {
         arrivalCity: null,
         arrivalCountry: null,
         bookingReference: null,
-        tripId: null,
+        tripId: null, customNotificationId: null, customNotificationDate: null,
       });
 
       // Заменяем на новые
@@ -327,6 +327,8 @@ describe('TicketRepository', () => {
           scannedAt: '2025-05-01T12:00:00Z',
           notificationEnabled: true,
           notificationId: 'notif-new',
+          customNotificationId: null,
+          customNotificationDate: null,
           airlineName: null,
           operatingAirlineName: null,
           operatingAirlineCode: null,
@@ -352,6 +354,8 @@ describe('TicketRepository', () => {
           scannedAt: '2025-05-02T12:00:00Z',
           notificationEnabled: false,
           notificationId: null,
+          customNotificationId: null,
+          customNotificationDate: null,
           airlineName: null,
           operatingAirlineName: null,
           operatingAirlineCode: null,

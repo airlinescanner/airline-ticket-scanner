@@ -362,6 +362,8 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
         arrivalCountry: null,
         bookingReference: null,
         tripId: null,
+        customNotificationId: null,
+        customNotificationDate: null,
       });
 
       expect(ticket.id).toBeDefined();
@@ -392,6 +394,8 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
         arrivalCountry: null,
         bookingReference: null,
         tripId: null,
+        customNotificationId: null,
+        customNotificationDate: null,
       });
 
       await ticketRepository.save({
@@ -416,6 +420,8 @@ describe('Database Integration Tests (Checkpoint 6)', () => {
         arrivalCountry: null,
         bookingReference: null,
         tripId: null,
+        customNotificationId: null,
+        customNotificationDate: null,
       });
 
       // Проверяем, что индекс работает (запрос должен быть быстрым)

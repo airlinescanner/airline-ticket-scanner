@@ -103,21 +103,21 @@ describe('AirlineRepository', () => {
       );
     });
 
-    it('должен отклонять URL регистрации без https://', async () => {
+    it('должен отклонять невалидный URL регистрации', async () => {
       const airline: Omit<Airline, 'id' | 'updatedAt'> = {
         iataCode: 'SU',
         icaoCode: 'AFL',
         name: 'Test Airline',
         country: 'Russia',
         logoUrl: null,
-        registrationUrl: 'http://example.com',
+        registrationUrl: 'bad',
         supportPhone: null,
         checkInHoursBefore: 24,
         notes: null,
       };
 
       await expect(airlineRepository.create(airline)).rejects.toThrow(
-        'Registration URL must start with https://'
+        'DB_VALIDATION_ERROR: Invalid Registration URL format'
       );
     });
   });

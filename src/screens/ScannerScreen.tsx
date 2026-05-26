@@ -12,7 +12,9 @@ import { Camera, useCameraDevice, useCameraPermission } from 'react-native-visio
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import { ViewfinderOverlay } from '../components/ViewfinderOverlay';
 import { PillButton } from '../components/PillButton';
 import { Card } from '../components/Card';
@@ -34,6 +36,7 @@ export const ScannerScreen: React.FC = () => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isFocusing, setIsFocusing] = useState(false); // Новое состояние для автофокуса
+  const [isCaptureFocused, setIsCaptureFocused] = useState(false); // Новое состояние для a11y фокуса
   const [error, setError] = useState<string | null>(null);
   const [exposure, setExposure] = useState(0);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
@@ -216,10 +219,8 @@ export const ScannerScreen: React.FC = () => {
           device={device}
           isActive={isCameraActive}
           photo={true}
-          enableHighQualityPhotos={true}
           enableZoomGesture={true}
-          photoQualityBalance="quality"
-          enableAutoStabilization={true}
+          photoQualityBalance="balanced"
           exposure={exposure}
         />
       )}
@@ -274,9 +275,18 @@ export const ScannerScreen: React.FC = () => {
               backgroundColor: tokens.colors.button.primary.background,
               opacity: isProcessing || isCapturing || isFocusing ? 0.5 : 1,
             },
+            isCaptureFocused && {
+              borderWidth: 4,
+              borderColor: tokens.colors.accent.primary || '#FFCC00',
+            }
           ]}
           onPress={handleCapture}
           disabled={isProcessing || isCapturing || isFocusing}
+          onFocus={() => setIsCaptureFocused(true)}
+          onBlur={() => setIsCaptureFocused(false)}
+          accessibilityRole="button"
+          accessibilityLabel={t('scanner.captureLabel', 'Сфотографировать билет')}
+          accessibilityHint={t('scanner.captureHint', 'Нажмите для фокусировки и снимка билета')}
         >
           <View
             style={[

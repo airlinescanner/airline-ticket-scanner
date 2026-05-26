@@ -216,6 +216,31 @@ export const SettingsScreen: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
+          {t('settings.howToUse').toUpperCase()}
+        </Text>
+        <Card style={styles.card}>
+          <TouchableOpacity 
+            style={styles.item} 
+            onPress={() => showAlert({
+              title: t('settings.howToUseTitle'),
+              message: t('settings.howToUseMessage'),
+              type: 'info',
+              buttons: [{ text: t('common.ok') }]
+            })}
+          >
+            <View style={styles.itemContent}>
+              <Ionicons name="book-outline" size={22} color={tokens.colors.accent.primary} />
+              <Text style={[styles.itemLabel, { color: tokens.colors.text.primary }]}>
+                {t('settings.howToUseTitle')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={tokens.colors.text.secondary} />
+          </TouchableOpacity>
+        </Card>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: tokens.colors.text.secondary }]}>
           {t('settings.airlineDatabase').toUpperCase()}
         </Text>
         <Card style={styles.card}>

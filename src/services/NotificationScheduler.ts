@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import i18next from 'i18next';
 import { Ticket } from '../types/ticket';
 
 // Настройка обработчика уведомлений (вынесено наверх для стабильности в SDK 54)
@@ -51,10 +52,19 @@ export class NotificationScheduler {
     const hasPermission = await this.requestPermission();
     if (!hasPermission) return null;
 
-    const title = `🛫 Регистрация открыта: ${ticket.airline}`;
+    // Resolve localization keys or fallbacks safely
+    const title = i18next.t('notification.registrationOpensTitle', { 
+      airline: ticket.airlineName || ticket.airlineCode,
+      defaultValue: `🛫 Регистрация открыта: ${ticket.airlineName || ticket.airlineCode}`
+    });
     const route = `${ticket.departureAirport} → ${ticket.arrivalAirport}`;
     const passenger = ticket.passengerName.split('/')[0];
-    const body = `✈️ Пора регистрировать ${passenger}!\nРейс ${ticket.flightNumber} (${route}) уже открыт. Нажмите, чтобы открыть детали.`;
+    const body = i18next.t('notification.registrationOpensBody', {
+      passenger,
+      flightNumber: ticket.flightNumber,
+      route,
+      defaultValue: `✈️ Пора регистрировать ${passenger}!\nРейс ${ticket.flightNumber} (${route}) уже открыт. Нажмите, чтобы открыть детали.`
+    });
 
     try {
       const notificationId = await Notifications.scheduleNotificationAsync({
@@ -63,13 +73,13 @@ export class NotificationScheduler {
           body,
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
-          channelId: CHANNEL_ID,
           data: { ticketId: ticket.id, type: 'REGISTRATION_OPEN' },
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: registrationDate,
-        },
+          channelId: CHANNEL_ID, // Correctly moved to trigger / options hierarchy
+        } as any,
       });
       return notificationId;
     } catch (error) {
@@ -87,9 +97,16 @@ export class NotificationScheduler {
     const hasPermission = await this.requestPermission();
     if (!hasPermission) return null;
 
-    const title = `🔔 Напоминание: ${ticket.airline}`;
+    const title = i18next.t('notification.customReminderTitle', {
+      airline: ticket.airlineName || ticket.airlineCode,
+      defaultValue: `🔔 Напоминание: ${ticket.airlineName || ticket.airlineCode}`
+    });
     const route = `${ticket.departureAirport} → ${ticket.arrivalAirport}`;
-    const body = `Вы просили напомнить о регистрации на рейс ${ticket.flightNumber} (${route}).`;
+    const body = i18next.t('notification.customReminderBody', {
+      flightNumber: ticket.flightNumber,
+      route,
+      defaultValue: `Вы просили напомнить о регистрации на рейс ${ticket.flightNumber} (${route}).`
+    });
 
     try {
       const notificationId = await Notifications.scheduleNotificationAsync({
@@ -98,13 +115,13 @@ export class NotificationScheduler {
           body,
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
-          channelId: CHANNEL_ID,
           data: { ticketId: ticket.id, type: 'CUSTOM_REMINDER' },
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: date,
-        },
+          channelId: CHANNEL_ID, // Correctly moved to trigger / options hierarchy
+        } as any,
       });
       return notificationId;
     } catch (error) {
@@ -123,3 +140,4 @@ export class NotificationScheduler {
 }
 
 export const notificationScheduler = new NotificationScheduler();
+
