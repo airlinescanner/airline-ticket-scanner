@@ -29,7 +29,10 @@
   },
   "submit": {
     "production": {
-      "ios": {},
+      "ios": {
+        "appleId": "ustik72@gmail.com",
+        "ascAppId": "6773630181"
+      },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
         "track": "internal"
