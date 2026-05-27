@@ -23,7 +23,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ustimweb72.airlineticketscanner",
       "infoPlist": {
-        "NSCameraUsageDescription": "$(PRODUCT_NAME) потребує доступу до камери для сканування квитків."
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) потребує доступу до камери для сканування квитків.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -34,7 +35,10 @@
         "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET"
       ]
     },
     "web": {
