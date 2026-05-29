@@ -13,12 +13,13 @@ import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
-import { AppNavigator } from './src/navigation/AppNavigator';
+import { AppNavigator, navigationRef } from './src/navigation/AppNavigator';
 import i18n from './src/i18n'; // Инициализация i18next
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import { initializeDatabase } from './src/services/database';
 import { AlertProvider, useAlert } from './src/theme/AlertContext';
 import { notificationScheduler } from './src/services/NotificationScheduler';
+import * as Notifications from 'expo-notifications';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { airlineUpdateService } from './src/services/AirlineUpdateService';
@@ -135,6 +136,44 @@ export default function App() {
 
     // Запрос разрешений на уведомления при старте
     notificationScheduler.requestPermission();
+  }, []);
+
+  // Обработчик нажатия на уведомление — навигация к билету
+  React.useEffect(() => {
+    // Listener: уведомление получено (foreground)
+    const receivedSubscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('[App] 🔔 Notification received in foreground:', notification.request.content.title);
+    });
+
+    // Listener: пользователь нажал на уведомление
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      console.log('[App] 👆 Notification tapped, data:', data);
+
+      if (data?.ticketId && navigationRef.current?.isReady()) {
+        // Навигация к деталям билета
+        navigationRef.current.navigate('TicketDetail', { ticketId: data.ticketId as number });
+      }
+    });
+
+    // Проверяем, не было ли уведомление, которое открыло приложение (cold start)
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response) {
+        const data = response.notification.request.content.data;
+        console.log('[App] 🚀 App opened from notification, data:', data);
+        // Задержка, чтобы навигация успела инициализироваться
+        setTimeout(() => {
+          if (data?.ticketId && navigationRef.current?.isReady()) {
+            navigationRef.current.navigate('TicketDetail', { ticketId: data.ticketId as number });
+          }
+        }, 1000);
+      }
+    });
+
+    return () => {
+      receivedSubscription.remove();
+      responseSubscription.remove();
+    };
   }, []);
 
   // Показываем загрузку ДО инициализации ThemeProvider

@@ -3,7 +3,7 @@
     "name": "Check-in scanner",
     "slug": "airline-ticket-scanner",
     "scheme": "airlineticketscanner",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "sdkVersion": "52.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,8 +22,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ustimweb72.airlineticketscanner",
+      "buildNumber": "4",
       "infoPlist": {
         "NSCameraUsageDescription": "$(PRODUCT_NAME) потребує доступу до камери для сканування квитків.",
+        "NSLocationWhenInUseUsageDescription": "$(PRODUCT_NAME) потребує доступу до геопозиції для автоматичного визначення часового поясу вашого вильоту.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -35,6 +37,7 @@
         "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

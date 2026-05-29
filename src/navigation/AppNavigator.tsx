@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme } from '../theme/ThemeContext';
 import { RootStackParamList } from './types';
@@ -20,12 +20,15 @@ import { TripDetailScreen } from '../screens/TripDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// Ref для навигации из уведомлений и других внешних источников
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
 export const AppNavigator: React.FC = () => {
   const { tokens, resolvedTheme } = useTheme();
   const headerTopColor = resolvedTheme === 'dark' ? '#082D52' : '#DFEAF5';
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {

@@ -174,6 +174,15 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
             const notificationId = await notificationScheduler.schedule(savedTicket, regInfo.registrationOpensAt);
             if (notificationId) {
               await ticketRepository.updateNotification(savedTicket.id, true, notificationId);
+              console.log(`[ScanResultScreen] ✅ Notification scheduled: ${notificationId}`);
+            } else {
+              // Уведомление не запланировано (нет разрешений или ошибка)
+              console.warn('[ScanResultScreen] ⚠️ Notification was NOT scheduled (permission denied or error)');
+              showAlert({
+                title: t('notification.permissionRequired', 'Разрешение на уведомления'),
+                message: t('notification.permissionDeniedMessage', 'Не удалось запланировать уведомление о регистрации. Проверьте разрешения уведомлений и будильников в настройках устройства.'),
+                type: 'warning'
+              });
             }
           } else if (regInfo && regInfo.registrationOpensAt.getTime() < Date.now()) {
             // Если дата в прошлом, не пытаемся планировать уведомление
@@ -185,6 +194,11 @@ export const ScanResultScreen: React.FC<Props> = ({ route, navigation }) => {
           }
         } catch (err) {
           console.warn('Auto-scheduling notification failed:', err);
+          showAlert({
+            title: t('notification.permissionRequired', 'Уведомление'),
+            message: t('notification.schedulingFailed', 'Не удалось запланировать уведомление. Попробуйте включить его вручную в деталях билета.'),
+            type: 'warning'
+          });
         }
       }
 

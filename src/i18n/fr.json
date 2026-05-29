@@ -66,7 +66,9 @@
     "errorNetwork": "Erreur réseau. Vérifiez votre connexion Internet et réessayez.",
     "errorRateLimit": "Limite de requêtes du service IA atteinte. Réessayez plus tard.",
     "errorModel": "Le modèle IA configuré ne prend pas en charge la reconnaissance d'images.",
-    "errorCameraClosed": "Caméra temporairement indisponible. Veuillez réessayer."
+    "errorCameraClosed": "Caméra temporairement indisponible. Veuillez réessayer.",
+    "errorDailyLimit": "Limite quotidienne de scan atteinte (10 scans réussis par 24 heures). Veuillez réessayer plus tard.",
+    "errorConsecutiveFailures": "Scanner temporairement bloqué pendant {{cooldown}}s suite à 5 échecs consécutifs. Veuillez vous assurer que le document est lisible."
   },
   "ticket": {
     "passengerName": "Nom du passager",

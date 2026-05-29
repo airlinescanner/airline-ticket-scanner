@@ -66,7 +66,9 @@
     "errorNetwork": "Netzwerkfehler. Überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "errorRateLimit": "Limit des KI-Dienstes erreicht. Bitte versuchen Sie es später noch einmal.",
     "errorModel": "Das konfigurierte KI-Modell unterstützt keine Bilderkennung.",
-    "errorCameraClosed": "Kamera vorübergehend nicht verfügbar. Bitte versuchen Sie es erneut."
+    "errorCameraClosed": "Kamera vorübergehend nicht verfügbar. Bitte versuchen Sie es erneut.",
+    "errorDailyLimit": "Tägliches Scan-Limit erreicht (10 erfolgreiche Scans pro 24 Stunden). Bitte versuchen Sie es später noch einmal.",
+    "errorConsecutiveFailures": "Scanner vorübergehend für {{cooldown}}s gesperrt wegen 5 aufeinanderfolgenden Fehlern. Bitte stellen Sie sicher, dass das Dokument gut lesbar ist."
   },
   "ticket": {
     "passengerName": "Name des Passagiers",

@@ -66,7 +66,9 @@
     "errorNetwork": "Network error. Check your internet connection and try again.",
     "errorRateLimit": "AI service rate limit reached. Please try again later.",
     "errorModel": "Configured AI model does not support image recognition.",
-    "errorCameraClosed": "Camera is temporarily unavailable. Please try again."
+    "errorCameraClosed": "Camera is temporarily unavailable. Please try again.",
+    "errorDailyLimit": "Daily scan limit reached (10 successful scans per 24 hours). Please try again later.",
+    "errorConsecutiveFailures": "Scanner temporarily blocked for {{cooldown}}s due to 5 consecutive failures. Please ensure the document is clear and has readable text."
   },
   "ticket": {
     "passengerName": "Passenger Name",

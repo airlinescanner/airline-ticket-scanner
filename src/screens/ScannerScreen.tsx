@@ -20,6 +20,7 @@ import { PillButton } from '../components/PillButton';
 import { Card } from '../components/Card';
 import type { RootStackParamList } from '../navigation/types';
 import { scanCoordinator } from '../services/ScanCoordinator';
+import { rateLimitService } from '../services/RateLimitService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,12 +42,93 @@ export const ScannerScreen: React.FC = () => {
   const [exposure, setExposure] = useState(0);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
 
+  const [limitStatus, setLimitStatus] = useState<{
+    allowed: boolean;
+    reason?: 'daily_limit' | 'consecutive_failures';
+    cooldownRemainingSeconds?: number;
+    remainingScans: number;
+  }>({ allowed: true, remainingScans: 10 });
+
+  const checkScanLimits = React.useCallback(async () => {
+    try {
+      const status = await rateLimitService.checkLimit();
+      setLimitStatus(status);
+      
+      if (!status.allowed) {
+        if (status.reason === 'daily_limit') {
+          setError(t('scanner.errorDailyLimit'));
+        } else if (status.reason === 'consecutive_failures') {
+          setError(
+            t('scanner.errorConsecutiveFailures', {
+              cooldown: status.cooldownRemainingSeconds,
+            })
+          );
+        }
+      } else {
+        // Очищаем ошибку лимита, если ограничения больше нет
+        setError((prev) => 
+          prev === t('scanner.errorDailyLimit') || 
+          (prev && prev.startsWith(t('scanner.errorConsecutiveFailures', { cooldown: 0 }).split('0')[0]))
+            ? null 
+            : prev
+        );
+      }
+    } catch (e) {
+      console.warn('Error checking scan limits:', e);
+    }
+  }, [t]);
+
   React.useEffect(() => {
     const subscription = AppState.addEventListener('change', setAppState);
     return () => subscription.remove();
   }, []);
 
+  // Проверяем лимиты при каждом фокусе экрана
+  React.useEffect(() => {
+    if (isFocused) {
+      checkScanLimits();
+    }
+  }, [isFocused, checkScanLimits]);
+
+  // Обратный отсчет для кулдауна блокировки ошибок
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (
+      isFocused &&
+      !limitStatus.allowed &&
+      limitStatus.reason === 'consecutive_failures' &&
+      limitStatus.cooldownRemainingSeconds &&
+      limitStatus.cooldownRemainingSeconds > 0
+    ) {
+      timer = setInterval(() => {
+        setLimitStatus((prev) => {
+          const nextSec = prev.cooldownRemainingSeconds ? prev.cooldownRemainingSeconds - 1 : 0;
+          if (nextSec <= 0) {
+            clearInterval(timer);
+            // Перепроверяем лимит
+            checkScanLimits();
+            return { ...prev, allowed: true, cooldownRemainingSeconds: 0 };
+          }
+          
+          setError(t('scanner.errorConsecutiveFailures', { cooldown: nextSec }));
+          return { ...prev, cooldownRemainingSeconds: nextSec };
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isFocused, limitStatus.allowed, limitStatus.reason, checkScanLimits, t]);
+
   const mapScanErrorToMessage = (err: unknown): string => {
+    // Если лимит уже превышен, не переписываем ошибку
+    if (!limitStatus.allowed) {
+      if (limitStatus.reason === 'daily_limit') return t('scanner.errorDailyLimit');
+      if (limitStatus.reason === 'consecutive_failures') {
+        return t('scanner.errorConsecutiveFailures', { cooldown: limitStatus.cooldownRemainingSeconds });
+      }
+    }
+
     const rawMessage = err instanceof Error ? err.message : '';
     const message = rawMessage.toLowerCase();
 
@@ -85,7 +167,7 @@ export const ScannerScreen: React.FC = () => {
 
   // Обработка захвата изображения
   const handleCapture = async () => {
-    if (!cameraRef.current || isProcessing || isCapturing || isFocusing) return;
+    if (!cameraRef.current || isProcessing || isCapturing || isFocusing || !limitStatus.allowed) return;
 
     try {
       setError(null);
@@ -137,15 +219,21 @@ export const ScannerScreen: React.FC = () => {
       const results = Array.isArray(ticketDataList) ? ticketDataList : [];
       
       if (results.length > 0) {
+        await rateLimitService.recordSuccess();
+        await checkScanLimits();
         navigation.navigate('ScanResult', { 
           ticketDataList: results
         });
       } else {
-        setError(t('scanner.errorProcessing', 'Не удалось распознать билет'));
+        setError(t('scanner.ocrFailed'));
+        await rateLimitService.recordFailure();
+        await checkScanLimits();
       }
     } catch (err: any) {
       console.error('Scan error:', err);
-      setError(err?.message || 'Ошибка сканирования');
+      await rateLimitService.recordFailure();
+      await checkScanLimits();
+      setError(mapScanErrorToMessage(err));
       setIsCapturing(false);
       setIsFocusing(false);
     } finally {
@@ -261,9 +349,13 @@ export const ScannerScreen: React.FC = () => {
             </Text>
             <PillButton
               title={t('common.retry')}
-              onPress={() => setError(null)}
+              onPress={() => {
+                setError(null);
+                checkScanLimits();
+              }}
               variant="secondary"
               style={styles.retryButton}
+              disabled={!limitStatus.allowed}
             />
           </Card>
         )}
@@ -273,7 +365,7 @@ export const ScannerScreen: React.FC = () => {
             styles.captureButton,
             { 
               backgroundColor: tokens.colors.button.primary.background,
-              opacity: isProcessing || isCapturing || isFocusing ? 0.5 : 1,
+              opacity: isProcessing || isCapturing || isFocusing || !limitStatus.allowed ? 0.5 : 1,
             },
             isCaptureFocused && {
               borderWidth: 4,
@@ -281,7 +373,7 @@ export const ScannerScreen: React.FC = () => {
             }
           ]}
           onPress={handleCapture}
-          disabled={isProcessing || isCapturing || isFocusing}
+          disabled={isProcessing || isCapturing || isFocusing || !limitStatus.allowed}
           onFocus={() => setIsCaptureFocused(true)}
           onBlur={() => setIsCaptureFocused(false)}
           accessibilityRole="button"
